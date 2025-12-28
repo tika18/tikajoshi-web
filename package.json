@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.23.26",
+    "jspdf": "^3.0.4",
+    "lucide-react": "^0.562.0",
+    "pdfjs-dist": "^5.4.449",
+    "tailwind-merge": "^3.4.0"
+  }
+}
