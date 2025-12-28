@@ -2,16 +2,25 @@
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/context/AuthContext";
-import { GraduationCap, Moon, Sun, Search, Menu, X, ChevronDown, User, LogIn } from "lucide-react";
+import { GraduationCap, Moon, Sun, Search, Menu, X, ChevronDown, User, LogIn, ChevronRight, LogOut } from "lucide-react";
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
   const [mobileMenu, setMobileMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  
+  // State for Mobile Accordion (kun menu kuleko xa vanera track garna)
+  const [mobileActive, setMobileActive] = useState<string | null>(null);
 
-  // Helper for Dropdown
+  // Toggle Mobile Sections
+  const toggleMobileSection = (section: string) => {
+    setMobileActive(mobileActive === section ? null : section);
+  };
+
+  // Helper for Desktop Dropdown
   const NavItem = ({ title, href, links }: { title: string, href: string, links?: { name: string, href: string }[] }) => (
     <div className="relative group h-16 flex items-center cursor-pointer">
       <Link href={href} className="flex items-center gap-1 text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition">
@@ -29,16 +38,53 @@ export default function Navbar() {
     </div>
   );
 
+  // Helper for Mobile Dropdown (Accordion)
+  const MobileNavItem = ({ title, links }: { title: string, links: { name: string, href: string }[] }) => (
+    <div className="border-b border-slate-200 dark:border-slate-800 last:border-0">
+        <button 
+            onClick={() => toggleMobileSection(title)} 
+            className="flex justify-between items-center w-full py-4 text-slate-900 dark:text-white font-bold text-lg"
+        >
+            {title}
+            <ChevronDown size={20} className={`transition-transform duration-300 ${mobileActive === title ? "rotate-180" : ""}`}/>
+        </button>
+        
+        <AnimatePresence>
+            {mobileActive === title && (
+                <motion.div 
+                    initial={{ height: 0, opacity: 0 }} 
+                    animate={{ height: "auto", opacity: 1 }} 
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                >
+                    <div className="flex flex-col gap-2 pb-4 pl-4 border-l-2 border-slate-200 dark:border-slate-800 ml-2">
+                        {links.map((link, i) => (
+                            <Link 
+                                key={i} 
+                                href={link.href} 
+                                onClick={() => setMobileMenu(false)}
+                                className="text-slate-600 dark:text-slate-400 py-2 text-base hover:text-primary transition flex items-center gap-2"
+                            >
+                                <ChevronRight size={14}/> {link.name}
+                            </Link>
+                        ))}
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    </div>
+  );
+
   return (
-    <header className="fixed top-0 w-full z-50 bg-white/80 dark:bg-[#020817]/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-[#020817]/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
         
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
+        <Link href="/" className="flex items-center gap-2 group z-50">
           <div className="bg-primary p-1.5 rounded-lg text-white shadow-lg shadow-primary/30 group-hover:scale-110 transition">
-             <GraduationCap size={22} />
+             <GraduationCap size={20} />
           </div>
-          <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+          <span className="text-lg md:text-xl font-black tracking-tight text-slate-900 dark:text-white">
             Tikajoshi
           </span>
         </Link>
@@ -56,7 +102,8 @@ export default function Navbar() {
             { name: "TU Result Hub", href: "/tools/tu-result" },
             { name: "Date Converter", href: "/tools/date-converter" },
             { name: "Passport Photo", href: "/tools/passport-photo" },
-            { name: "Image Compressor", href: "/tools/compressor" }
+            { name: "Image Compressor", href: "/tools/compressor" },
+            { name: "PDF Tools", href: "/tools/img-to-pdf" }
           ]} />
 
           <NavItem title="Market" href="/market" links={[
@@ -68,9 +115,9 @@ export default function Navbar() {
         </nav>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3">
-          {/* Search */}
-          <div className={`flex items-center bg-slate-100 dark:bg-slate-800 rounded-full transition-all duration-300 ${searchOpen ? "w-64 px-3 border border-primary" : "w-10 px-0 justify-center"} h-10`}>
+        <div className="flex items-center gap-2 md:gap-3 z-50">
+          {/* Search Toggle */}
+          <div className={`flex items-center bg-slate-100 dark:bg-slate-800 rounded-full transition-all duration-300 ${searchOpen ? "w-48 md:w-64 px-3 border border-primary" : "w-9 h-9 justify-center"}`}>
              <button onClick={() => setSearchOpen(!searchOpen)} className="text-slate-500 dark:text-slate-400 hover:text-primary">
                 {searchOpen ? <X size={16}/> : <Search size={18}/>}
              </button>
@@ -82,38 +129,121 @@ export default function Navbar() {
           {/* Theme Toggle */}
           <button 
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")} 
-            className="p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+            className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
           >
             <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-orange-500" />
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-blue-400" />
           </button>
 
-          {/* Auth */}
-          {user ? (
-            <div className="relative group">
-                <div className="w-9 h-9 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold cursor-pointer shadow-lg">
+          {/* Mobile Menu Toggle Button */}
+          <button className="md:hidden p-2 text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition" onClick={() => setMobileMenu(!mobileMenu)}>
+            {mobileMenu ? <X size={20}/> : <Menu size={20}/>}
+          </button>
+
+          {/* Auth (Desktop Only) */}
+          <div className="hidden md:block">
+            {user ? (
+                <div className="w-9 h-9 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold cursor-pointer shadow-lg" onClick={logout}>
                     {user.name[0].toUpperCase()}
                 </div>
-                <button onClick={logout} className="absolute top-10 right-0 bg-red-500 text-white text-xs px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition flex items-center gap-1">
-                    Log Out
-                </button>
-            </div>
-          ) : (
-            <div className="hidden md:flex gap-2">
-                <Link href="/login" className="px-5 py-2 rounded-full text-xs font-bold transition border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">
+            ) : (
+                <Link href="/login" className="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-full text-xs font-bold transition shadow-lg shadow-primary/20">
                     Login
                 </Link>
-                <Link href="/login" className="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-full text-xs font-bold transition shadow-lg shadow-primary/20">
-                    Sign Up
-                </Link>
-            </div>
-          )}
-
-          <button className="md:hidden text-slate-900 dark:text-white" onClick={() => setMobileMenu(!mobileMenu)}>
-            <Menu />
-          </button>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* -------------------- */}
+      {/* MOBILE MENU FULLSCREEN */}
+      {/* -------------------- */}
+      <AnimatePresence>
+        {mobileMenu && (
+            <motion.div 
+                initial={{ opacity: 0, y: -20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0, y: -20 }}
+                className="fixed inset-0 top-16 bg-white dark:bg-[#020817] z-40 overflow-y-auto md:hidden"
+            >
+                <div className="p-6 pb-20 flex flex-col min-h-full">
+                    
+                    {/* User Profile in Mobile */}
+                    <div className="mb-8 p-4 bg-slate-50 dark:bg-[#1e293b] rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                        {user ? (
+                            <>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                        {user.name[0].toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-slate-900 dark:text-white leading-tight">{user.name}</p>
+                                        <p className="text-xs text-slate-500">Member</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => { logout(); setMobileMenu(false); }} className="text-red-500 bg-red-500/10 p-2 rounded-lg hover:bg-red-500/20">
+                                    <LogOut size={18}/>
+                                </button>
+                            </>
+                        ) : (
+                            <Link href="/login" onClick={() => setMobileMenu(false)} className="w-full bg-primary text-white py-3 rounded-xl font-bold text-center flex items-center justify-center gap-2">
+                                <LogIn size={18}/> Login / Sign Up
+                            </Link>
+                        )}
+                    </div>
+
+                    {/* Accordion Menu Links */}
+                    <div className="flex-1">
+                        
+                        <MobileNavItem title="Study Hub 📚" links={[
+                            { name: "Engineering (IOE)", href: "/study/ioe" },
+                            { name: "Loksewa Prep", href: "/study/loksewa" },
+                            { name: "NEB (+2) Notes", href: "/study/neb" },
+                            { name: "License Exams", href: "/study/license" }
+                        ]}/>
+
+                        <MobileNavItem title="Smart Tools 🛠️" links={[
+                            { name: "TU Result Hub", href: "/tools/tu-result" },
+                            { name: "Date Converter", href: "/tools/date-converter" },
+                            { name: "Passport Photo", href: "/tools/passport-photo" },
+                            { name: "Image Compressor", href: "/tools/compressor" },
+                            { name: "PDF Converter", href: "/tools/img-to-pdf" }
+                        ]}/>
+
+                        <MobileNavItem title="Market & Economy 📈" links={[
+                            { name: "Share Market (NEPSE)", href: "/market" },
+                            { name: "Forex Exchange", href: "/market/forex" },
+                            { name: "EMI Calculator", href: "/tools/emi-calculator" }
+                        ]}/>
+
+                        {/* Direct Links */}
+                        <div className="border-b border-slate-200 dark:border-slate-800 py-4">
+                            <Link href="/chill-zone" onClick={() => setMobileMenu(false)} className="flex items-center justify-between text-lg font-bold text-pink-600 dark:text-pink-400">
+                                Chill Zone 🏖️ <ChevronRight size={20}/>
+                            </Link>
+                        </div>
+
+                        <div className="border-b border-slate-200 dark:border-slate-800 py-4">
+                            <Link href="/quiz" onClick={() => setMobileMenu(false)} className="flex items-center justify-between text-lg font-bold text-yellow-600 dark:text-yellow-400">
+                                Daily Quiz ⚡ <ChevronRight size={20}/>
+                            </Link>
+                        </div>
+
+                    </div>
+
+                    {/* Footer Info */}
+                    <div className="mt-8 text-center text-slate-400 text-sm">
+                        <p>© 2025 Tikajoshi</p>
+                        <div className="flex justify-center gap-4 mt-2 font-medium">
+                            <Link href="/contact" onClick={() => setMobileMenu(false)}>Contact</Link>
+                            <Link href="/about" onClick={() => setMobileMenu(false)}>About</Link>
+                        </div>
+                    </div>
+
+                </div>
+            </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
