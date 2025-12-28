@@ -2,20 +2,35 @@
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/context/AuthContext";
-import { GraduationCap, Moon, Sun, Search, Menu, X, ChevronDown, User, LogIn, ChevronRight, LogOut } from "lucide-react";
-import { useState } from "react";
+import { GraduationCap, Moon, Sun, Search, Menu, X, ChevronDown, LogOut, ChevronRight, Home, LogIn } from "lucide-react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
+  
+  // State
   const [mobileMenu, setMobileMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  
-  // State for Mobile Accordion (kun menu kuleko xa vanera track garna)
   const [mobileActive, setMobileActive] = useState<string | null>(null);
 
-  // Toggle Mobile Sections
+  // Close mobile menu when screen resizes to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setMobileMenu(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Prevent scrolling when mobile menu is open
+  useEffect(() => {
+    if (mobileMenu) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = 'unset';
+  }, [mobileMenu]);
+
+  // Toggle Accordion for Mobile
   const toggleMobileSection = (section: string) => {
     setMobileActive(mobileActive === section ? null : section);
   };
@@ -38,15 +53,15 @@ export default function Navbar() {
     </div>
   );
 
-  // Helper for Mobile Dropdown (Accordion)
+  // Helper for Mobile Accordion Item
   const MobileNavItem = ({ title, links }: { title: string, links: { name: string, href: string }[] }) => (
-    <div className="border-b border-slate-200 dark:border-slate-800 last:border-0">
+    <div className="border-b border-slate-100 dark:border-slate-800">
         <button 
             onClick={() => toggleMobileSection(title)} 
-            className="flex justify-between items-center w-full py-4 text-slate-900 dark:text-white font-bold text-lg"
+            className="flex justify-between items-center w-full py-4 text-slate-800 dark:text-slate-200 font-bold text-lg"
         >
             {title}
-            <ChevronDown size={20} className={`transition-transform duration-300 ${mobileActive === title ? "rotate-180" : ""}`}/>
+            <ChevronDown size={20} className={`transition-transform duration-300 ${mobileActive === title ? "rotate-180 text-primary" : ""}`}/>
         </button>
         
         <AnimatePresence>
@@ -57,15 +72,16 @@ export default function Navbar() {
                     exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden"
                 >
-                    <div className="flex flex-col gap-2 pb-4 pl-4 border-l-2 border-slate-200 dark:border-slate-800 ml-2">
+                    <div className="flex flex-col gap-1 pb-4 pl-4 border-l-2 border-slate-200 dark:border-slate-700 ml-2">
                         {links.map((link, i) => (
                             <Link 
                                 key={i} 
                                 href={link.href} 
                                 onClick={() => setMobileMenu(false)}
-                                className="text-slate-600 dark:text-slate-400 py-2 text-base hover:text-primary transition flex items-center gap-2"
+                                className="text-slate-500 dark:text-slate-400 py-2 text-base font-medium hover:text-primary transition flex items-center gap-2"
                             >
-                                <ChevronRight size={14}/> {link.name}
+                                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></div>
+                                {link.name}
                             </Link>
                         ))}
                     </div>
@@ -76,11 +92,12 @@ export default function Navbar() {
   );
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-white/90 dark:bg-[#020817]/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
+    <>
+    <header className="fixed top-0 w-full z-[100] bg-white/90 dark:bg-[#020817]/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
       <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
         
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group z-50">
+        {/* 1. Logo (Always Visible) */}
+        <Link href="/" className="flex items-center gap-2 group z-[101]" onClick={() => setMobileMenu(false)}>
           <div className="bg-primary p-1.5 rounded-lg text-white shadow-lg shadow-primary/30 group-hover:scale-110 transition">
              <GraduationCap size={20} />
           </div>
@@ -89,8 +106,10 @@ export default function Navbar() {
           </span>
         </Link>
         
-        {/* Desktop Nav */}
+        {/* 2. Desktop Navigation (Hidden on Mobile) */}
         <nav className="hidden md:flex items-center gap-8">
+          <Link href="/" className="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition">Home</Link>
+          
           <NavItem title="Study Hub" href="/study" links={[
             { name: "Engineering (IOE)", href: "/study/ioe" },
             { name: "Loksewa Aayog", href: "/study/loksewa" },
@@ -103,7 +122,7 @@ export default function Navbar() {
             { name: "Date Converter", href: "/tools/date-converter" },
             { name: "Passport Photo", href: "/tools/passport-photo" },
             { name: "Image Compressor", href: "/tools/compressor" },
-            { name: "PDF Tools", href: "/tools/img-to-pdf" }
+            { name: "PDF Converter", href: "/tools/img-to-pdf" }
           ]} />
 
           <NavItem title="Market" href="/market" links={[
@@ -114,9 +133,10 @@ export default function Navbar() {
           <Link href="/chill-zone" className="text-sm font-bold text-pink-600 dark:text-pink-400 hover:scale-105 transition">Chill Zone 🏖️</Link>
         </nav>
 
-        {/* Right Actions */}
-        <div className="flex items-center gap-2 md:gap-3 z-50">
-          {/* Search Toggle */}
+        {/* 3. Right Actions (Search, Theme, Menu) */}
+        <div className="flex items-center gap-2 md:gap-3 z-[101]">
+          
+          {/* Search */}
           <div className={`flex items-center bg-slate-100 dark:bg-slate-800 rounded-full transition-all duration-300 ${searchOpen ? "w-48 md:w-64 px-3 border border-primary" : "w-9 h-9 justify-center"}`}>
              <button onClick={() => setSearchOpen(!searchOpen)} className="text-slate-500 dark:text-slate-400 hover:text-primary">
                 {searchOpen ? <X size={16}/> : <Search size={18}/>}
@@ -126,7 +146,7 @@ export default function Navbar() {
              )}
           </div>
 
-          {/* Theme Toggle */}
+          {/* Theme */}
           <button 
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")} 
             className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
@@ -135,12 +155,15 @@ export default function Navbar() {
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-blue-400" />
           </button>
 
-          {/* Mobile Menu Toggle Button */}
-          <button className="md:hidden p-2 text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition" onClick={() => setMobileMenu(!mobileMenu)}>
+          {/* Mobile Hamburger Button */}
+          <button 
+            className="md:hidden p-2 text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition active:scale-95" 
+            onClick={() => setMobileMenu(!mobileMenu)}
+          >
             {mobileMenu ? <X size={20}/> : <Menu size={20}/>}
           </button>
 
-          {/* Auth (Desktop Only) */}
+          {/* Desktop Auth */}
           <div className="hidden md:block">
             {user ? (
                 <div className="w-9 h-9 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold cursor-pointer shadow-lg" onClick={logout}>
@@ -154,47 +177,56 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+    </header>
 
-      {/* -------------------- */}
-      {/* MOBILE MENU FULLSCREEN */}
-      {/* -------------------- */}
-      <AnimatePresence>
+    {/* ----------------------------- */}
+    {/* MOBILE MENU FULLSCREEN OVERLAY */}
+    {/* ----------------------------- */}
+    <AnimatePresence>
         {mobileMenu && (
             <motion.div 
-                initial={{ opacity: 0, y: -20 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                exit={{ opacity: 0, y: -20 }}
-                className="fixed inset-0 top-16 bg-white dark:bg-[#020817] z-40 overflow-y-auto md:hidden"
+                initial={{ opacity: 0, x: "100%" }} 
+                animate={{ opacity: 1, x: 0 }} 
+                exit={{ opacity: 0, x: "100%" }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="fixed inset-0 top-16 bg-white dark:bg-[#020817] z-[99] overflow-y-auto md:hidden"
             >
-                <div className="p-6 pb-20 flex flex-col min-h-full">
+                <div className="p-6 pb-32 flex flex-col min-h-full">
                     
-                    {/* User Profile in Mobile */}
-                    <div className="mb-8 p-4 bg-slate-50 dark:bg-[#1e293b] rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    {/* 1. Mobile User Profile */}
+                    <div className="mb-8 p-4 bg-slate-50 dark:bg-[#1e293b] rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between shadow-sm">
                         {user ? (
                             <>
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                    <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-md">
                                         {user.name[0].toUpperCase()}
                                     </div>
                                     <div>
-                                        <p className="font-bold text-slate-900 dark:text-white leading-tight">{user.name}</p>
-                                        <p className="text-xs text-slate-500">Member</p>
+                                        <p className="font-bold text-slate-900 dark:text-white leading-tight text-lg">{user.name}</p>
+                                        <p className="text-xs text-slate-500 font-medium">Pro Member</p>
                                     </div>
                                 </div>
-                                <button onClick={() => { logout(); setMobileMenu(false); }} className="text-red-500 bg-red-500/10 p-2 rounded-lg hover:bg-red-500/20">
-                                    <LogOut size={18}/>
+                                <button onClick={() => { logout(); setMobileMenu(false); }} className="text-red-500 bg-red-500/10 p-2.5 rounded-xl hover:bg-red-500/20 transition">
+                                    <LogOut size={20}/>
                                 </button>
                             </>
                         ) : (
-                            <Link href="/login" onClick={() => setMobileMenu(false)} className="w-full bg-primary text-white py-3 rounded-xl font-bold text-center flex items-center justify-center gap-2">
-                                <LogIn size={18}/> Login / Sign Up
+                            <Link href="/login" onClick={() => setMobileMenu(false)} className="w-full bg-primary text-white py-3.5 rounded-xl font-bold text-center flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
+                                <LogIn size={20}/> Login / Create Account
                             </Link>
                         )}
                     </div>
 
-                    {/* Accordion Menu Links */}
-                    <div className="flex-1">
+                    {/* 2. Mobile Links (Accordions) */}
+                    <div className="flex-1 space-y-2">
                         
+                        {/* Direct Home Link */}
+                        <div className="border-b border-slate-100 dark:border-slate-800">
+                            <Link href="/" onClick={() => setMobileMenu(false)} className="flex items-center gap-3 py-4 text-slate-800 dark:text-slate-200 font-bold text-lg">
+                                <Home size={20} className="text-primary"/> Home
+                            </Link>
+                        </div>
+
                         <MobileNavItem title="Study Hub 📚" links={[
                             { name: "Engineering (IOE)", href: "/study/ioe" },
                             { name: "Loksewa Prep", href: "/study/loksewa" },
@@ -217,13 +249,13 @@ export default function Navbar() {
                         ]}/>
 
                         {/* Direct Links */}
-                        <div className="border-b border-slate-200 dark:border-slate-800 py-4">
+                        <div className="border-b border-slate-100 dark:border-slate-800 py-4">
                             <Link href="/chill-zone" onClick={() => setMobileMenu(false)} className="flex items-center justify-between text-lg font-bold text-pink-600 dark:text-pink-400">
                                 Chill Zone 🏖️ <ChevronRight size={20}/>
                             </Link>
                         </div>
 
-                        <div className="border-b border-slate-200 dark:border-slate-800 py-4">
+                        <div className="border-b border-slate-100 dark:border-slate-800 py-4">
                             <Link href="/quiz" onClick={() => setMobileMenu(false)} className="flex items-center justify-between text-lg font-bold text-yellow-600 dark:text-yellow-400">
                                 Daily Quiz ⚡ <ChevronRight size={20}/>
                             </Link>
@@ -231,19 +263,20 @@ export default function Navbar() {
 
                     </div>
 
-                    {/* Footer Info */}
-                    <div className="mt-8 text-center text-slate-400 text-sm">
-                        <p>© 2025 Tikajoshi</p>
-                        <div className="flex justify-center gap-4 mt-2 font-medium">
+                    {/* 3. Mobile Footer Info */}
+                    <div className="mt-10 text-center text-slate-400 text-sm">
+                        <p className="font-medium">© 2025 Tikajoshi</p>
+                        <div className="flex justify-center gap-6 mt-4 font-bold text-slate-500">
                             <Link href="/contact" onClick={() => setMobileMenu(false)}>Contact</Link>
                             <Link href="/about" onClick={() => setMobileMenu(false)}>About</Link>
+                            <Link href="/privacy" onClick={() => setMobileMenu(false)}>Privacy</Link>
                         </div>
                     </div>
 
                 </div>
             </motion.div>
         )}
-      </AnimatePresence>
-    </header>
+    </AnimatePresence>
+    </>
   );
 }
