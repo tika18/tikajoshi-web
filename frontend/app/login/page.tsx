@@ -1,80 +1,105 @@
 "use client";
 import { useState } from "react";
-import Navbar from "@/components/Navbar";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { User, ArrowRight, Zap, Mail, Lock, Loader2, Github } from "lucide-react";
+import { Mail, Lock, Apple, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const { login } = useAuth();
+  
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false); 
+  const [appleLoading, setAppleLoading] = useState(false); 
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
 
-  const handleSocialLogin = (provider: string) => {
+  const handleSendOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if(!email) return;
     setLoading(true);
-    // Simulation of Google/FB Login
+    setTimeout(() => { setLoading(false); setStep(2); }, 1500);
+  };
+
+  const handleVerify = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
     setTimeout(() => {
-        login("Tikajoshi User"); // Auto login as User
+        // SAFE LOGIN: If email exists, split it for name, else use 'User'
+        const safeName = email ? email.split('@')[0] : "User";
+        login({ name: safeName, email: email });
+        
+        setLoading(false);
+        router.push("/chill-zone");
     }, 1500);
   };
 
+  // Simulate Google Login
+  const handleGoogleLogin = () => {
+    setGoogleLoading(true);
+    setTimeout(() => {
+        login({ name: "Google User", email: "google@user.com" });
+        setGoogleLoading(false);
+        router.push("/chill-zone");
+    }, 2000); 
+  };
+
+  // Simulate Apple Login
+  const handleAppleLogin = () => {
+    setAppleLoading(true);
+    setTimeout(() => {
+        login({ name: "Apple User", email: "apple@user.com" });
+        setAppleLoading(false);
+        router.push("/chill-zone");
+    }, 2000); 
+  };
+
   return (
-    <div className="min-h-screen bg-[#020817] flex flex-col relative overflow-hidden">
-      <Navbar />
-      
-      {/* Background Effects */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 -left-20 w-96 h-96 bg-blue-600/20 rounded-full blur-[120px]"></div>
-          <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px]"></div>
-      </div>
+    <div className="min-h-screen bg-[#020817] flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="bg-[#0f172a] border border-slate-800 w-full max-w-4xl h-[600px] rounded-3xl overflow-hidden flex shadow-2xl relative z-10">
+        
+        {/* Left Side */}
+        <div className="hidden md:flex w-1/2 bg-gradient-to-br from-blue-600 to-purple-600 p-10 flex-col justify-between">
+            <h2 className="text-3xl font-black text-white">Tikajoshi Web</h2>
+            <p className="text-blue-100">Welcome to the student community.</p>
+        </div>
 
-      <div className="flex-1 flex items-center justify-center px-6 py-24 relative z-10">
-        <div className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 p-8 md:p-10 rounded-[2rem] shadow-2xl">
-          
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/30 animate-in zoom-in duration-500">
-              <Zap size={32} className="text-white fill-white"/>
+        {/* Right Side */}
+        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+            <h1 className="text-3xl font-bold text-white mb-2">{step === 1 ? "Welcome Back" : "Check Email"}</h1>
+            <p className="text-slate-400 text-sm mb-8">{step === 1 ? "Login to access smart tools." : `OTP sent to ${email}`}</p>
+
+            {step === 1 ? (
+                <form onSubmit={handleSendOtp} className="space-y-4">
+                    <div className="relative">
+                        <Mail className="absolute left-4 top-3.5 text-slate-500" size={20}/>
+                        <input type="email" required placeholder="name@example.com" className="w-full bg-[#1e293b] border border-slate-700 rounded-xl py-3 pl-12 text-white focus:border-blue-500 outline-none" value={email} onChange={(e) => setEmail(e.target.value)}/>
+                    </div>
+                    <button disabled={loading} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-xl font-bold flex justify-center gap-2">
+                        {loading ? <Loader2 className="animate-spin"/> : <>Continue <ArrowRight size={18}/></>}
+                    </button>
+                </form>
+            ) : (
+                <form onSubmit={handleVerify} className="space-y-4">
+                    <div className="relative">
+                        <Lock className="absolute left-4 top-3.5 text-slate-500" size={20}/>
+                        <input type="text" required placeholder="123456" className="w-full bg-[#1e293b] border border-slate-700 rounded-xl py-3 pl-12 text-white text-lg tracking-widest" value={otp} onChange={(e) => setOtp(e.target.value)}/>
+                    </div>
+                    <button disabled={loading} className="w-full bg-green-600 hover:bg-green-500 text-white py-3.5 rounded-xl font-bold flex justify-center gap-2">
+                        {loading ? <Loader2 className="animate-spin"/> : <>Verify & Login <CheckCircle size={18}/></>}
+                    </button>
+                </form>
+            )}
+
+            <div className="mt-8 grid grid-cols-2 gap-4">
+                <button onClick={handleGoogleLogin} disabled={googleLoading} className="flex items-center justify-center gap-2 bg-[#1e293b] hover:bg-[#283548] py-3 rounded-xl border border-slate-700 text-white text-sm font-bold transition">
+                    {googleLoading ? <Loader2 size={18} className="animate-spin"/> : <>Google</>}
+                </button>
+                <button onClick={handleAppleLogin} disabled={appleLoading} className="flex items-center justify-center gap-2 bg-[#1e293b] hover:bg-[#283548] py-3 rounded-xl border border-slate-700 text-white text-sm font-bold transition">
+                    {appleLoading ? <Loader2 size={18} className="animate-spin"/> : <><Apple size={20} /> Apple</>}
+                </button>
             </div>
-            <h1 className="text-3xl font-black text-white mb-2">Welcome Back</h1>
-            <p className="text-slate-400">Login to save your quiz progress & posts.</p>
-          </div>
-
-          {/* Social Buttons */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
-             <button onClick={() => handleSocialLogin('Google')} className="flex items-center justify-center gap-2 bg-white text-slate-900 py-3 rounded-xl font-bold hover:bg-slate-200 transition">
-                <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="G"/> Google
-             </button>
-             <button onClick={() => handleSocialLogin('Github')} className="flex items-center justify-center gap-2 bg-[#24292e] text-white py-3 rounded-xl font-bold hover:opacity-90 transition">
-                <Github size={20}/> Github
-             </button>
-          </div>
-
-          <div className="relative mb-8 text-center">
-             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
-             <span className="relative bg-[#0b1221] px-4 text-xs text-slate-500 font-bold uppercase tracking-wider">Or continue with username</span>
-          </div>
-
-          <form onSubmit={(e) => { e.preventDefault(); login(name); }} className="space-y-5">
-            <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 ml-1 uppercase">Username</label>
-                <div className="flex items-center bg-[#0f172a]/50 border border-white/10 rounded-xl px-4 py-3.5 focus-within:border-blue-500/50 focus-within:bg-blue-500/5 transition">
-                    <User size={20} className="text-slate-500 mr-3"/>
-                    <input 
-                    type="text" 
-                    placeholder="Enter your name" 
-                    className="bg-transparent border-none outline-none text-white w-full placeholder:text-slate-600 font-medium"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    />
-                </div>
-            </div>
-
-            <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-blue-500/20 group">
-              {loading ? <Loader2 className="animate-spin"/> : <>Login Now <ArrowRight size={18} className="group-hover:translate-x-1 transition"/></>}
-            </button>
-          </form>
-          
-          <p className="text-center text-xs text-slate-500 mt-6">By logging in, you agree to our Terms & Privacy Policy.</p>
         </div>
       </div>
     </div>

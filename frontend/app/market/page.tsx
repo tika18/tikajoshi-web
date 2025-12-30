@@ -2,6 +2,8 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import { TrendingUp, ExternalLink, Maximize2, X, Star } from "lucide-react";
+// NEW: Import our AI Component
+import StockPredictor from "@/components/StockPredictor";
 
 export default function MarketPage() {
   const [fullScreen, setFullScreen] = useState(false);
@@ -26,6 +28,12 @@ export default function MarketPage() {
             </div>
         </div>
 
+        {/* NEW: AI Prediction Section */}
+        <div className="mb-16">
+            <StockPredictor />
+        </div>
+
+        {/* Live Chart Header */}
         <div className="flex justify-between items-end mb-6">
             <div>
                 <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
