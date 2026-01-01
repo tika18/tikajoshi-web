@@ -5,14 +5,16 @@ import Link from "next/link";
 import { 
   Search, Zap, GraduationCap, Building2, 
   FileText, ChevronRight, Newspaper, MonitorPlay,
-  BookOpen, Wrench, Files, BarChart3
+  BookOpen, Wrench, Files, BarChart3, Mic
 } from "lucide-react";
 
 export default function Home() {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
 
+  // ADDED "voice" keywords here
   const searchData = [
+    { keywords: ["voice", "speak", "typing", "bolera"], title: "Voice to Text AI", link: "/tools/voice-to-text", type: "Tool" },
     { keywords: ["pdf", "convert"], title: "Image to PDF Converter", link: "/tools/img-to-pdf", type: "Tool" },
     { keywords: ["merge", "pdf"], title: "Merge PDF Files", link: "/tools/merge-pdf", type: "Tool" },
     { keywords: ["image", "resize", "compress"], title: "Image Compressor", link: "/tools/compressor", type: "Tool" },
@@ -37,7 +39,7 @@ export default function Home() {
     <div className="min-h-screen bg-white dark:bg-[#020817] text-slate-900 dark:text-white">
       <Navbar />
       
-      {/* HERO SECTION (Common) */}
+      {/* HERO SECTION */}
       <section className="pt-32 pb-6 px-6 text-center max-w-5xl mx-auto relative">
         <div className="absolute top-20 left-10 w-40 h-40 bg-blue-500/20 rounded-full blur-[100px]"></div>
         <div className="absolute bottom-10 right-10 w-40 h-40 bg-purple-500/20 rounded-full blur-[100px]"></div>
@@ -52,7 +54,7 @@ export default function Home() {
             <Search className="text-slate-400 mr-3"/>
             <input 
               type="text" 
-              placeholder="Search 'News', 'Cricket', 'Result'..." 
+              placeholder="Search 'Voice Typing', 'Cricket'..." 
               className="w-full bg-transparent outline-none text-slate-900 dark:text-white"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -71,53 +73,46 @@ export default function Home() {
         </div>
       </section>
 
-      {/* =========================================================
-          MOBILE ONLY SECTION (Screenshot Style Grid)
-          (Visible on md:hidden only)
-      ========================================================== */}
+      {/* MOBILE ONLY SECTION (Screenshot Style Grid) */}
       <section className="px-4 max-w-7xl mx-auto mb-10 md:hidden relative z-10">
         
-        {/* Top 3 Main Grid (Swapped Share Market with Chill Zone) */}
+        {/* Top 3 Main Grid */}
         <div className="grid grid-cols-3 gap-3 mb-6">
             <Link href="/study" className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 p-4 rounded-2xl active:scale-95 transition flex flex-col items-center justify-center text-center">
                 <div className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 p-3 rounded-xl mb-2"><BookOpen size={20}/></div>
                 <span className="font-bold text-xs text-slate-800 dark:text-slate-200">Study Hub</span>
             </Link>
             
-            <Link href="/tools" className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/20 p-4 rounded-2xl active:scale-95 transition flex flex-col items-center justify-center text-center">
-                <div className="bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 p-3 rounded-xl mb-2"><Wrench size={20}/></div>
-                <span className="font-bold text-xs text-slate-800 dark:text-slate-200">Smart Tools</span>
+            {/* Added Voice Tool Here for Mobile visibility */}
+            <Link href="/tools/voice-to-text" className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/20 p-4 rounded-2xl active:scale-95 transition flex flex-col items-center justify-center text-center">
+                <div className="bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 p-3 rounded-xl mb-2"><Mic size={20}/></div>
+                <span className="font-bold text-xs text-slate-800 dark:text-slate-200">Voice AI</span>
             </Link>
 
-            {/* Changed to Chill Zone as requested */}
             <Link href="/chill-zone" className="bg-gradient-to-br from-pink-500/10 to-purple-500/10 border border-pink-500/20 p-4 rounded-2xl active:scale-95 transition flex flex-col items-center justify-center text-center">
                 <div className="bg-pink-100 dark:bg-pink-500/20 text-pink-600 dark:text-pink-400 p-3 rounded-xl mb-2"><MonitorPlay size={20}/></div>
                 <span className="font-bold text-xs text-slate-800 dark:text-slate-200">Chill Zone</span>
             </Link>
         </div>
 
-        {/* Quick Tools Grid (Swapped Items) */}
+        {/* Quick Tools Grid */}
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Quick Access</p>
         <div className="grid grid-cols-2 gap-3">
-           {/* 1. Image Resizer */}
            <Link href="/tools/compressor" className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm hover:border-blue-500/50 transition flex flex-col items-center text-center gap-2 active:scale-95">
                 <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl shadow-inner text-yellow-500"><Zap size={24}/></div>
                 <div><span className="font-bold text-xs block">Image Resizer</span><span className="text-[10px] text-slate-500">Compress Size</span></div>
            </Link>
            
-           {/* 2. PDF to Image */}
            <Link href="/tools/pdf-to-img" className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm hover:border-blue-500/50 transition flex flex-col items-center text-center gap-2 active:scale-95">
                 <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl shadow-inner text-red-500"><FileText size={24}/></div>
                 <div><span className="font-bold text-xs block">PDF to Image</span><span className="text-[10px] text-slate-500">Convert Pages</span></div>
            </Link>
 
-           {/* 3. News Hub (Replaced Date Converter) */}
            <Link href="/news" className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm hover:border-blue-500/50 transition flex flex-col items-center text-center gap-2 active:scale-95">
                 <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl shadow-inner text-blue-500"><Newspaper size={24}/></div>
                 <div><span className="font-bold text-xs block">News Hub</span><span className="text-[10px] text-slate-500">Daily Updates</span></div>
            </Link>
 
-           {/* 4. Merge PDF (Replaced Passport Photo) */}
            <Link href="/tools/merge-pdf" className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm hover:border-blue-500/50 transition flex flex-col items-center text-center gap-2 active:scale-95">
                 <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl shadow-inner text-emerald-500"><Files size={24}/></div>
                 <div><span className="font-bold text-xs block">Merge PDF</span><span className="text-[10px] text-slate-500">Combine Files</span></div>
@@ -125,14 +120,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* =========================================================
-          DESKTOP ONLY SECTION (Standard Layout)
-          (Visible on md:block only)
-      ========================================================== */}
+      {/* DESKTOP ONLY SECTION (Standard Layout) */}
       <section className="px-6 max-w-7xl mx-auto mb-20 hidden md:block">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Most Used Tools</p>
         <div className="grid grid-cols-4 gap-4">
-           {/* Desktop Standard Tools */}
+           {/* Added Voice Tool for Desktop */}
+           <Link href="/tools/voice-to-text" className="bg-[#1e293b] p-6 rounded-2xl border border-slate-800 hover:border-purple-500/50 transition group text-center hover:-translate-y-1 duration-300">
+              <div className="bg-slate-800 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-purple-500 group-hover:scale-110 transition"><Mic size={24}/></div>
+              <h3 className="font-bold text-slate-200">Voice AI</h3>
+              <p className="text-xs text-slate-500 mt-1">Nepali/English Typing</p>
+           </Link>
+           
            <Link href="/tools/compressor" className="bg-[#1e293b] p-6 rounded-2xl border border-slate-800 hover:border-yellow-500/50 transition group text-center hover:-translate-y-1 duration-300">
               <div className="bg-slate-800 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-yellow-500 group-hover:scale-110 transition"><Zap size={24}/></div>
               <h3 className="font-bold text-slate-200">Image Resizer</h3>
@@ -143,12 +141,6 @@ export default function Home() {
               <div className="bg-slate-800 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-red-500 group-hover:scale-110 transition"><FileText size={24}/></div>
               <h3 className="font-bold text-slate-200">PDF Tools</h3>
               <p className="text-xs text-slate-500 mt-1">Convert & Merge</p>
-           </Link>
-
-           <Link href="/news" className="bg-[#1e293b] p-6 rounded-2xl border border-slate-800 hover:border-blue-500/50 transition group text-center hover:-translate-y-1 duration-300">
-              <div className="bg-slate-800 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-blue-500 group-hover:scale-110 transition"><Newspaper size={24}/></div>
-              <h3 className="font-bold text-slate-200">News Hub</h3>
-              <p className="text-xs text-slate-500 mt-1">Daily Updates</p>
            </Link>
 
            <Link href="/chill-zone" className="bg-[#1e293b] p-6 rounded-2xl border border-slate-800 hover:border-pink-500/50 transition group text-center hover:-translate-y-1 duration-300">

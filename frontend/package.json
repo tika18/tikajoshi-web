@@ -14,6 +14,8 @@
     "browser-image-compression": "^2.0.2",
     "class-variance-authority": "*",
     "clsx": "*",
+    "docx": "^9.5.1",
+    "file-saver": "^2.0.5",
     "framer-motion": "^12.23.26",
     "jspdf": "^3.0.4",
     "lucide-react": "*",
@@ -29,6 +31,7 @@
     "tailwindcss-animate": "*"
   },
   "devDependencies": {
+    "@types/file-saver": "^2.0.7",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

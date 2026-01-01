@@ -3,39 +3,34 @@ import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/context/AuthContext";
 import { GraduationCap, Moon, Sun, Search, Menu, X, ChevronDown, LogOut, LogIn, Home, ChevronRight } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
-  
-  // State
-  const [mobileMenu, setMobileMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [mobileActive, setMobileActive] = useState<string | null>(null);
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [activeMobileDropdown, setActiveMobileDropdown] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close mobile menu on resize
+  // Close dropdown when clicking outside
   useEffect(() => {
-    const handleResize = () => { if (window.innerWidth >= 768) setMobileMenu(false); };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setActiveMobileDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Prevent scroll when mobile menu is open
-  useEffect(() => {
-    if (mobileMenu) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = 'unset';
-    return () => { document.body.style.overflow = 'unset'; };
-  }, [mobileMenu]);
-
   const toggleMobileSection = (section: string) => {
-    setMobileActive(mobileActive === section ? null : section);
+    setActiveMobileDropdown(activeMobileDropdown === section ? null : section);
   };
 
   const getUserInitial = () => {
-    if (user && user.name) return user.name.charAt(0).toUpperCase();
-    return 'U';
+    return user?.name ? user.name.charAt(0).toUpperCase() : 'U';
   };
 
   const navLinks = [
@@ -51,6 +46,7 @@ export default function Navbar() {
     { 
       name: "Smart Tools", href: "/tools", 
       items: [
+        { name: "Voice Typing 🎙️", href: "/tools/voice-to-text" }, // NEW ADDED
         { name: "QR Generator", href: "/tools/qr-generator" },
         { name: "Merge PDFs", href: "/tools/merge-pdf" },
         { name: "TU Result Hub", href: "/tools/tu-result" },
@@ -87,7 +83,7 @@ export default function Navbar() {
 
   return (
     <>
-    <header className="fixed top-0 w-full z-[1000] bg-white/95 dark:bg-[#020817]/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
+    <header className="fixed top-0 w-full z-[1000] bg-white/95 dark:bg-[#020817]/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800" ref={dropdownRef}>
       <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group z-[1001]" onClick={() => setMobileMenu(false)}>
           <div className="bg-emerald-600 p-1.5 rounded-lg text-white shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition">
@@ -119,7 +115,6 @@ export default function Navbar() {
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-blue-400" />
           </button>
           
-          {/* HAMBURGER MENU (Visible Only on Mobile) */}
           <button className="md:hidden p-2 text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition z-[1002]" onClick={() => setMobileMenu(!mobileMenu)}>
             {mobileMenu ? <X size={20}/> : <Menu size={20}/>}
           </button>
@@ -155,8 +150,8 @@ export default function Navbar() {
                         <div className="border-b border-slate-100 dark:border-slate-800"><Link href="/" onClick={() => setMobileMenu(false)} className="flex items-center gap-3 py-4 text-slate-800 dark:text-slate-200 font-bold text-lg"><Home size={20} className="text-emerald-500"/> Home</Link></div>
                         {navLinks.map((nav, i) => (
                           <div key={i} className="border-b border-slate-100 dark:border-slate-800">
-                            <button onClick={() => toggleMobileSection(nav.name)} className="flex justify-between items-center w-full py-4 text-slate-800 dark:text-slate-200 font-bold text-lg">{nav.name}<ChevronDown size={20} className={`transition-transform duration-300 ${mobileActive === nav.name ? "rotate-180 text-emerald-500" : ""}`}/></button>
-                            <AnimatePresence>{mobileActive === nav.name && (<motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden"><div className="flex flex-col gap-1 pb-4 pl-4 border-l-2 border-slate-200 dark:border-slate-700 ml-2">{nav.items.map((link, j) => (<Link key={j} href={link.href} onClick={() => setMobileMenu(false)} className="text-slate-500 dark:text-slate-400 py-2 text-base font-medium hover:text-emerald-500 transition flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></div>{link.name}</Link>))}</div></motion.div>)}</AnimatePresence>
+                            <button onClick={() => toggleMobileSection(nav.name)} className="flex justify-between items-center w-full py-4 text-slate-800 dark:text-slate-200 font-bold text-lg">{nav.name}<ChevronDown size={20} className={`transition-transform duration-300 ${activeMobileDropdown === nav.name ? "rotate-180 text-emerald-500" : ""}`}/></button>
+                            <AnimatePresence>{activeMobileDropdown === nav.name && (<motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden"><div className="flex flex-col gap-1 pb-4 pl-4 border-l-2 border-slate-200 dark:border-slate-700 ml-2">{nav.items.map((link, j) => (<Link key={j} href={link.href} onClick={() => setMobileMenu(false)} className="text-slate-500 dark:text-slate-400 py-2 text-base font-medium hover:text-emerald-500 transition flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></div>{link.name}</Link>))}</div></motion.div>)}</AnimatePresence>
                           </div>
                         ))}
                         <div className="border-b border-slate-100 dark:border-slate-800 py-4"><Link href="/news" onClick={() => setMobileMenu(false)} className="flex items-center justify-between text-lg font-bold text-blue-600 dark:text-blue-400">News Hub 📰 <ChevronRight size={20}/></Link></div>
