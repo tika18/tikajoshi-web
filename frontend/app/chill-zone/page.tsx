@@ -34,6 +34,16 @@ const channels = [
     desc: "IPL, India Cricket & Asia Cup",
     img: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=1200"
   },
+  // --- NEW CHANNEL ADDED HERE ---
+  {
+    id: "star2",
+    category: "cricket",
+    name: "Star Sports 2",
+    url: "https://crichd.one/stream.php?id=starsp2",
+    desc: "Test Matches & Domestic Cricket",
+    img: "https://images.unsplash.com/photo-1624526267942-ab0ff8a3e972?q=80&w=1200"
+  },
+  // ------------------------------
   {
     id: "ten",
     category: "cricket",
@@ -98,7 +108,7 @@ export default function ChillZone() {
             <div className="lg:col-span-2 flex flex-col gap-3">
                 <div className="relative w-full aspect-video bg-black rounded-xl md:rounded-3xl overflow-hidden border border-slate-700 shadow-2xl group">
                     
-                    {/* IFRAME (Sandbox Removed for CricHD support) */}
+                    {/* IFRAME */}
                     <iframe 
                         key={activeChannel.id} 
                         src={activeChannel.url}
@@ -109,7 +119,6 @@ export default function ChillZone() {
                         allowFullScreen={true}
                         className="w-full h-full relative z-10"
                         allow="autoplay; encrypted-media; picture-in-picture"
-                        // FIX: Removed 'sandbox' attribute to let CricHD play
                     ></iframe>
 
                     {/* OVERLAY UI (Click to Unmute / Watch) */}
