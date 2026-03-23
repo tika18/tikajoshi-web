@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/context/AuthContext";
-import { GraduationCap, Moon, Sun, Search, Menu, X, ChevronDown, LogOut, LogIn, Home, ChevronRight } from "lucide-react";
+import { GraduationCap, Moon, Sun, Search, Menu, X, ChevronDown, LogOut, LogIn, Home } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -14,7 +14,6 @@ export default function Navbar() {
   const [activeMobileDropdown, setActiveMobileDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -30,7 +29,9 @@ export default function Navbar() {
   };
 
   const getUserInitial = () => {
-    return user?.name ? user.name.charAt(0).toUpperCase() : 'U';
+    if (!user?.name) return "U";
+    const name = String(user.name).trim();
+    return name.length > 0 ? name.charAt(0).toUpperCase() : "U";
   };
 
   const navLinks = [
@@ -64,7 +65,7 @@ export default function Navbar() {
     }
   ];
 
-  const DesktopNavItem = ({ title, href, items }: { title: string, href: string, items?: { name: string, href: string }[] }) => (
+  const DesktopNavItem = ({ title, href, items }: { title: string; href: string; items?: { name: string; href: string }[] }) => (
     <div className="relative group h-full flex items-center">
       <Link href={href} className="flex items-center gap-1 text-sm font-bold text-slate-400 hover:text-white transition py-2 px-3 rounded-full hover:bg-white/5">
         {title} {items && <ChevronDown size={14} className="group-hover:rotate-180 transition duration-300" />}
@@ -83,11 +84,9 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Floating Island Navbar */}
       <header className="fixed top-4 left-4 right-4 md:left-10 md:right-10 z-[1000] glass-nav rounded-2xl shadow-2xl border border-white/5" ref={dropdownRef}>
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
 
-          {/* LOGO */}
           <Link href="/" className="flex items-center gap-3 group z-[1001]" onClick={() => setMobileMenu(false)}>
             <div className="bg-gradient-to-br from-violet-600 to-cyan-500 p-2 rounded-xl text-white shadow-lg shadow-violet-500/20 group-hover:scale-110 transition">
               <GraduationCap size={20} />
@@ -95,7 +94,6 @@ export default function Navbar() {
             <span className="text-xl font-black tracking-tight text-white">Tikajoshi</span>
           </Link>
 
-          {/* DESKTOP NAV */}
           <nav className="hidden md:flex items-center gap-2">
             <Link href="/" className="text-sm font-bold text-slate-400 hover:text-white hover:bg-white/5 px-4 py-2 rounded-full transition">Home</Link>
             {navLinks.map((nav, idx) => (
@@ -105,9 +103,7 @@ export default function Navbar() {
             <Link href="/chill-zone" className="text-sm font-bold text-violet-400 hover:scale-105 transition px-3">Chill Zone</Link>
           </nav>
 
-          {/* RIGHT ACTION ICONS */}
           <div className="flex items-center gap-3 z-[1001]">
-            {/* Search Toggle */}
             <div className={`flex items-center bg-white/5 rounded-full transition-all duration-300 ${searchOpen ? "w-40 md:w-64 px-3 border border-violet-500/50" : "w-10 h-10 justify-center hover:bg-white/10"}`}>
               <button onClick={() => setSearchOpen(!searchOpen)} className="text-slate-400 hover:text-white transition">
                 {searchOpen ? <X size={16} /> : <Search size={18} />}
@@ -117,22 +113,21 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Theme Toggle */}
             <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition">
               <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-amber-400" />
               <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-violet-400" />
             </button>
 
-            {/* Mobile Menu Toggle */}
             <button className="md:hidden w-10 h-10 flex items-center justify-center text-white bg-white/5 rounded-full hover:bg-white/10 transition z-[1002]" onClick={() => setMobileMenu(!mobileMenu)}>
               {mobileMenu ? <X size={20} /> : <Menu size={20} />}
             </button>
 
-            {/* User Profile */}
             <div className="hidden md:block">
               {user ? (
                 <div className="flex items-center gap-2 cursor-pointer bg-white/5 py-1 px-1.5 rounded-full border border-white/5 hover:border-violet-500/50 transition" onClick={logout}>
-                  <div className="w-8 h-8 bg-gradient-to-r from-violet-600 to-cyan-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-inner">{getUserInitial()}</div>
+                  <div className="w-8 h-8 bg-gradient-to-r from-violet-600 to-cyan-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-inner">
+                    {getUserInitial()}
+                  </div>
                 </div>
               ) : (
                 <Link href="/login" className="bg-violet-600 hover:bg-violet-500 text-white px-5 py-2 rounded-full text-xs font-bold transition shadow-lg shadow-violet-500/20">Login</Link>
@@ -142,45 +137,55 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {mobileMenu && (
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="fixed inset-0 top-24 mx-4 z-[999] md:hidden">
             <div className="glass-card rounded-3xl p-6 shadow-2xl border border-white/10 max-h-[85vh] overflow-y-auto">
-
-              {/* User Section Mobile */}
               <div className="mb-8 p-4 bg-white/5 rounded-2xl border border-white/5 flex items-center justify-between">
                 {user ? (
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-violet-600 to-cyan-600 rounded-full flex items-center justify-center text-white font-bold text-lg">{getUserInitial()}</div>
-                    <div><p className="font-bold text-white">{user.name || "User"}</p><button onClick={() => { logout(); setMobileMenu(false); }} className="text-xs text-red-400 font-bold flex items-center gap-1 mt-1">Log Out <LogOut size={12} /></button></div>
+                    <div className="w-10 h-10 bg-gradient-to-r from-violet-600 to-cyan-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                      {getUserInitial()}
+                    </div>
+                    <div>
+                      <p className="font-bold text-white">{user.name || "User"}</p>
+                      <button onClick={() => { logout(); setMobileMenu(false); }} className="text-xs text-red-400 font-bold flex items-center gap-1 mt-1">
+                        Log Out <LogOut size={12} />
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <Link href="/login" onClick={() => setMobileMenu(false)} className="w-full bg-violet-600 text-white py-3 rounded-xl font-bold text-center flex items-center justify-center gap-2"><LogIn size={18} /> Login / Sign Up</Link>
+                  <Link href="/login" onClick={() => setMobileMenu(false)} className="w-full bg-violet-600 text-white py-3 rounded-xl font-bold text-center flex items-center justify-center gap-2">
+                    <LogIn size={18} /> Login / Sign Up
+                  </Link>
                 )}
               </div>
 
-              {/* Links */}
               <div className="flex-1 space-y-2">
-                <Link href="/" onClick={() => setMobileMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 text-slate-200 font-bold"><Home size={20} className="text-violet-500" /> Home</Link>
-
+                <Link href="/" onClick={() => setMobileMenu(false)} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 text-slate-200 font-bold">
+                  <Home size={20} className="text-violet-500" /> Home
+                </Link>
                 {navLinks.map((nav, i) => (
                   <div key={i} className="rounded-xl overflow-hidden bg-white/5 mb-2">
-                    <button onClick={() => toggleMobileSection(nav.name)} className="flex justify-between items-center w-full p-4 text-slate-200 font-bold">{nav.name}<ChevronDown size={20} className={`transition-transform duration-300 ${activeMobileDropdown === nav.name ? "rotate-180 text-violet-500" : ""}`} /></button>
-                    <AnimatePresence>{activeMobileDropdown === nav.name && (
-                      <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }}>
-                        <div className="flex flex-col gap-1 pb-4 px-4">
-                          {nav.items.map((link, j) => (
-                            <Link key={j} href={link.href} onClick={() => setMobileMenu(false)} className="text-slate-400 py-2.5 px-3 rounded-lg text-sm hover:bg-white/10 hover:text-cyan-400 transition flex items-center gap-2">
-                              <div className="w-1 h-1 rounded-full bg-slate-600"></div>{link.name}
-                            </Link>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}</AnimatePresence>
+                    <button onClick={() => toggleMobileSection(nav.name)} className="flex justify-between items-center w-full p-4 text-slate-200 font-bold">
+                      {nav.name}
+                      <ChevronDown size={20} className={`transition-transform duration-300 ${activeMobileDropdown === nav.name ? "rotate-180 text-violet-500" : ""}`} />
+                    </button>
+                    <AnimatePresence>
+                      {activeMobileDropdown === nav.name && (
+                        <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }}>
+                          <div className="flex flex-col gap-1 pb-4 px-4">
+                            {nav.items.map((link, j) => (
+                              <Link key={j} href={link.href} onClick={() => setMobileMenu(false)} className="text-slate-400 py-2.5 px-3 rounded-lg text-sm hover:bg-white/10 hover:text-cyan-400 transition flex items-center gap-2">
+                                <div className="w-1 h-1 rounded-full bg-slate-600"></div>{link.name}
+                              </Link>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 ))}
-
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   <Link href="/news" onClick={() => setMobileMenu(false)} className="bg-blue-500/10 p-4 rounded-xl text-center font-bold text-blue-400 border border-blue-500/20">News Hub 📰</Link>
                   <Link href="/chill-zone" onClick={() => setMobileMenu(false)} className="bg-pink-500/10 p-4 rounded-xl text-center font-bold text-pink-400 border border-pink-500/20">Chill Zone 🍿</Link>
