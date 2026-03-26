@@ -62,7 +62,7 @@ export default function Contact() {
                 {/* FormSubmit Service used for Email */}
                 <form action="https://formsubmit.co/tikajoshi2@gmail.com" method="POST" className="space-y-4">
                     {/* Redirect after submit */}
-                    <input type="hidden" name="_next" value="http://localhost:3000/contact"/>
+                    <input type="hidden" name="_next" value="https://www.tikajoshi.com.np/contact"/>
                     <input type="hidden" name="_captcha" value="false"/>
                     <input type="hidden" name="_subject" value="New Message from Tikajoshi Website!"/>
 
