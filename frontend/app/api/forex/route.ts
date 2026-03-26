@@ -14,7 +14,7 @@ export async function GET() {
     if (res.ok) {
       const data = await res.json();
       return NextResponse.json(data);
-    }
+    }``
     throw new Error("NRB API Failed");
 
   } catch (error) {
