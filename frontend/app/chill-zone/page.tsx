@@ -3,52 +3,178 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { client } from "@/sanity/client";
 import { useAuth } from "@/context/AuthContext";
-import { Plus, User, Heart, Share2, Play, Tv, VolumeX, MessageSquare, Send, Film, MonitorPlay, X, Loader2, ExternalLink } from "lucide-react";
+import {
+  Plus, User, Heart, Share2, Play, Tv, Film,
+  MonitorPlay, X, Loader2, ExternalLink, Send,
+  MessageSquare, Radio, Zap, Globe, Trophy
+} from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
-// --- LIVE CHANNELS CONFIGURATION (NEW HD LINK ADDED) ---
+// ============================================================
+// CHANNELS CONFIG — 15+ channels, 5 categories
+// ============================================================
 const channels = [
-  { 
-    id: "cricbuzz-hd", 
-    category: "cricket", 
-    name: "Cricbuzz Live HD 🔥", 
-    url: "https://playerado.top/embed2.php?id=osncric&v=su", 
-    desc: "Full HD Premium Stream", 
-    img: "https://images.unsplash.com/photo-1531415074968-055a44455887?q=80&w=1200" 
+  // 🏏 CRICKET
+  {
+    id: "cricbuzz-hd",
+    category: "cricket",
+    name: "Cricbuzz HD 🔥",
+    url: "https://playerado.top/embed2.php?id=osncric&v=su",
+    desc: "Full HD Premium • Best Quality",
+    badge: "HD",
+    img: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=1200",
   },
-  { 
-    id: "star", 
-    category: "cricket", 
-    name: "Star Sports 1 (IPL)", 
-    url: "https://crichd.one/stream.php?id=starsp1", 
-    desc: "IPL & India Cricket", 
-    img: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=1200" 
+  {
+    id: "star1",
+    category: "cricket",
+    name: "Star Sports 1",
+    url: "https://crichd.one/stream.php?id=starsp1",
+    desc: "IPL & India Cricket",
+    badge: "IPL",
+    img: "https://images.unsplash.com/photo-1531415074968-055a44455887?q=80&w=1200",
   },
-  { 
-    id: "willow", 
-    category: "cricket", 
-    name: "Willow Cricket", 
-    url: "https://crichd.one/stream.php?id=willow", 
-    desc: "ICC Matches", 
-    img: "https://images.unsplash.com/photo-1631194758628-71ec7c35137e?q=80&w=1200" 
+  {
+    id: "star2",
+    category: "cricket",
+    name: "Star Sports 2",
+    url: "https://crichd.one/stream.php?id=starsp2",
+    desc: "Test Matches & Domestic",
+    badge: null,
+    img: "https://images.unsplash.com/photo-1624526267942-ab0ff8a3e972?q=80&w=1200",
   },
-  { 
-    id: "football-main", 
-    category: "football", 
-    name: "Live Football HD", 
-    url: "https://istreameast.app/v17", 
-    desc: "Premier League", 
-    img: "https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?q=80&w=1200" 
+  {
+    id: "willow",
+    category: "cricket",
+    name: "Willow Cricket",
+    url: "https://crichd.one/stream.php?id=willow",
+    desc: "ICC Matches & USA Cricket",
+    badge: null,
+    img: "https://images.unsplash.com/photo-1631194758628-71ec7c35137e?q=80&w=1200",
   },
-  { 
-    id: "ten", 
-    category: "cricket", 
-    name: "Ten Sports", 
-    url: "https://crichd.one/stream.php?id=tensp", 
-    desc: "Pakistan Cricket", 
-    img: "https://images.unsplash.com/photo-1531415074968-055a44455887?q=80&w=1200" 
-  }
+  {
+    id: "ten",
+    category: "cricket",
+    name: "Ten Sports",
+    url: "https://crichd.one/stream.php?id=tensp",
+    desc: "Pakistan & International",
+    badge: null,
+    img: "https://images.unsplash.com/photo-1531415074968-055a44455887?q=80&w=1200",
+  },
+  {
+    id: "sonysix",
+    category: "cricket",
+    name: "Sony Six",
+    url: "https://crichd.one/stream.php?id=sonysix",
+    desc: "Live Cricket & Sports",
+    badge: null,
+    img: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=1200",
+  },
+  // ⚽ FOOTBALL
+  {
+    id: "football-hd",
+    category: "football",
+    name: "Football HD",
+    url: "https://istreameast.app/v17",
+    desc: "Premier League & La Liga",
+    badge: "EPL",
+    img: "https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?q=80&w=1200",
+  },
+  {
+    id: "bein",
+    category: "football",
+    name: "beIN Sports",
+    url: "https://crichd.one/stream.php?id=bein1",
+    desc: "Champions League & LaLiga",
+    badge: "UCL",
+    img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200",
+  },
+  {
+    id: "espn-football",
+    category: "football",
+    name: "ESPN Sports",
+    url: "https://istreameast.app/v3",
+    desc: "MLS, Serie A & More",
+    badge: null,
+    img: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=1200",
+  },
+  // 🏀 NBA & BASKETBALL
+  {
+    id: "nba-tv",
+    category: "nba",
+    name: "NBA TV Live",
+    url: "https://istreameast.app/v4",
+    desc: "NBA Games & Highlights",
+    badge: "NBA",
+    img: "https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1200",
+  },
+  {
+    id: "espn-nba",
+    category: "nba",
+    name: "ESPN NBA",
+    url: "https://istreameast.app/v5",
+    desc: "Playoffs & Finals",
+    badge: null,
+    img: "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=1200",
+  },
+  // 🏎️ F1 & MOTORSPORT
+  {
+    id: "f1-sky",
+    category: "f1",
+    name: "Sky Sports F1",
+    url: "https://istreameast.app/v6",
+    desc: "Formula 1 Grand Prix",
+    badge: "F1",
+    img: "https://images.unsplash.com/photo-1647026027895-15b9be40f6f8?q=80&w=1200",
+  },
+  // 📺 NEPALI TV
+  {
+    id: "ntv",
+    category: "nepali",
+    name: "NTV Nepal",
+    url: "https://www.youtube.com/embed/live_stream?channel=UCnZBNBXSV9MYrPS1_LGk7Gg&autoplay=1",
+    desc: "Nepal Television Live",
+    badge: "🇳🇵",
+    img: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?q=80&w=1200",
+  },
+  {
+    id: "kantipur",
+    category: "nepali",
+    name: "Kantipur TV",
+    url: "https://www.youtube.com/embed/live_stream?channel=UCQHh1T9A719DsApPTEMSUaQ&autoplay=1",
+    desc: "Kantipur Live News",
+    badge: "NEWS",
+    img: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?q=80&w=1200",
+  },
+  {
+    id: "avr",
+    category: "nepali",
+    name: "AP1 HD Nepal",
+    url: "https://www.youtube.com/embed/live_stream?channel=UCQmkDFqm6HM2PktnUPaEGgQ&autoplay=1",
+    desc: "AP1 Television Live",
+    badge: null,
+    img: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?q=80&w=1200",
+  },
+];
+
+const categories = [
+  { id: "all",     label: "All",        icon: "🔥", color: "from-red-500 to-orange-500" },
+  { id: "cricket", label: "Cricket",    icon: "🏏", color: "from-emerald-500 to-cyan-500" },
+  { id: "football",label: "Football",   icon: "⚽", color: "from-blue-500 to-indigo-500" },
+  { id: "nba",     label: "NBA",        icon: "🏀", color: "from-orange-500 to-red-500" },
+  { id: "f1",      label: "F1",         icon: "🏎️", color: "from-red-600 to-rose-500" },
+  { id: "nepali",  label: "Nepali TV",  icon: "🇳🇵", color: "from-blue-600 to-red-600" },
+];
+
+// ============================================================
+// MATCH SCHEDULE
+// ============================================================
+const schedule = [
+  { time: "Today 7:30 PM", match: "India vs Australia", sport: "🏏", channel: "Star Sports 1", live: true },
+  { time: "Today 9:00 PM", match: "Man City vs Arsenal", sport: "⚽", channel: "beIN Sports", live: true },
+  { time: "Tomorrow 6:00 AM", match: "Lakers vs Warriors", sport: "🏀", channel: "NBA TV", live: false },
+  { time: "Sunday 5:00 PM", match: "Monaco Grand Prix", sport: "🏎️", channel: "Sky F1", live: false },
+  { time: "Tomorrow 7:00 PM", match: "Pakistan vs England", sport: "🏏", channel: "Ten Sports", live: false },
 ];
 
 export default function ChillZone() {
@@ -56,291 +182,518 @@ export default function ChillZone() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<any>(null);
-  
-  // Player State
-  const [activeChannel, setActiveChannel] = useState(channels[0]); 
-  const [showOverlay, setShowOverlay] = useState(true); 
+  const [activeChannel, setActiveChannel] = useState(channels[0]);
+  const [showOverlay, setShowOverlay] = useState(true);
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [chatMsg, setChatMsg] = useState("");
+
+  const filteredChannels = activeCategory === "all"
+    ? channels
+    : channels.filter(c => c.category === activeCategory);
 
   useEffect(() => {
     client.fetch(`*[_type == "chillPost"] | order(publishedAt desc) {
-        _id, title, author, category, body,
-        "images": images[].asset->url,
-        publishedAt
-    }`).then(data => { setPosts(data); setLoading(false); }).catch(()=>setLoading(false));
+      _id, title, author, category, body,
+      "images": images[].asset->url,
+      publishedAt
+    }`).then(data => { setPosts(data); setLoading(false); })
+      .catch(() => setLoading(false));
   }, []);
 
-  const switchChannel = (channel: any) => {
-    setActiveChannel(channel);
-    setShowOverlay(true); 
+  const switchChannel = (ch: typeof channels[0]) => {
+    setActiveChannel(ch);
+    setShowOverlay(true);
   };
 
   return (
-    <div className="min-h-screen bg-[#0b101a] text-white">
+    <div className="min-h-screen bg-[#070c14] text-white">
       <Navbar />
-      <div className="max-w-[1400px] mx-auto pt-24 md:pt-32 pb-20 px-4 md:px-6">
-        
-        {/* HEADER */}
-        <div className="mb-6 flex flex-col md:flex-row justify-between items-end gap-4">
+
+      <div className="max-w-[1440px] mx-auto pt-24 md:pt-32 pb-24 px-4 md:px-8">
+
+        {/* ── HEADER ── */}
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
-                <h1 className="text-3xl md:text-5xl font-black mb-2 text-white bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-500">
-                  Live Action 🔥
-                </h1>
-                <p className="text-slate-400 text-sm md:text-base">Watch Free HD Streams & Chat with Friends</p>
+              <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-3 py-1 rounded-full mb-3">
+                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-red-400 text-xs font-bold uppercase tracking-widest">Live Now</span>
+              </div>
+              <h1 className="text-4xl md:text-6xl font-black tracking-tight">
+                <span className="text-white">Chill </span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-400 to-yellow-400">Zone</span>
+                <span className="ml-3">🔥</span>
+              </h1>
+              <p className="text-slate-400 mt-2 text-sm md:text-base">
+                15+ Live Channels · Cricket · Football · NBA · F1 · Nepali TV
+              </p>
             </div>
+            <div className="flex items-center gap-3 text-xs text-slate-500">
+              <div className="flex items-center gap-1.5 bg-white/4 px-3 py-2 rounded-full border border-white/8">
+                <Globe size={12} className="text-cyan-400" />
+                <span>{channels.length} Channels</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white/4 px-3 py-2 rounded-full border border-white/8">
+                <Zap size={12} className="text-yellow-400" />
+                <span>Free · HD</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* TRENDING CHANNELS (Horizontal Scroll) */}
-        <div className="flex items-center gap-3 overflow-x-auto custom-scrollbar pb-4 mb-6">
-            <div className="flex items-center gap-2 bg-red-600/20 text-red-500 font-bold px-4 py-2 rounded-full border border-red-500/30 whitespace-nowrap">
-                <Tv size={18} /> TRENDING NOW
-            </div>
-            {channels.map((channel) => (
-                <button 
-                    key={channel.id}
-                    onClick={() => switchChannel(channel)}
-                    className={`flex items-center gap-2 px-5 py-2 rounded-full font-semibold border transition-all whitespace-nowrap ${
-                        activeChannel.id === channel.id 
-                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)] text-white" 
-                        : "bg-[#161e2c] border-slate-700 text-slate-300 hover:bg-slate-800"
-                    }`}
+        {/* ── CATEGORY TABS ── */}
+        <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-3 mb-6 no-scrollbar">
+          {categories.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all border ${
+                activeCategory === cat.id
+                  ? `bg-gradient-to-r ${cat.color} text-white border-transparent shadow-lg`
+                  : "bg-white/4 border-white/8 text-slate-400 hover:text-white hover:bg-white/8"
+              }`}
+            >
+              <span>{cat.icon}</span> {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── MAIN PLAYER + SIDEBAR ── */}
+        <div className="grid lg:grid-cols-10 gap-5 mb-6">
+
+          {/* PLAYER — 7 cols */}
+          <div className="lg:col-span-7 flex flex-col gap-3">
+
+            {/* Video */}
+            <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-white/8 shadow-2xl shadow-black/60 group">
+              <iframe
+                key={activeChannel.id}
+                src={activeChannel.url}
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                scrolling="no"
+                allowFullScreen
+                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                className="w-full h-full z-10 relative"
+              />
+
+              {showOverlay && (
+                <div
+                  className="absolute inset-0 z-20 flex items-center justify-center cursor-pointer"
+                  style={{ background: "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.3) 100%)" }}
+                  onClick={() => setShowOverlay(false)}
                 >
-                    {activeChannel.id === channel.id && <span className="w-2 h-2 bg-white rounded-full animate-ping"></span>}
-                    {channel.name}
+                  <img
+                    src={activeChannel.img}
+                    className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-overlay"
+                    alt=""
+                  />
+
+                  {/* LIVE badge */}
+                  <div className="absolute top-4 left-4 z-30 flex items-center gap-2 bg-red-600 px-3 py-1.5 rounded-full text-xs font-black shadow-lg shadow-red-500/40">
+                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
+                    LIVE HD
+                  </div>
+
+                  {/* Channel name top right */}
+                  {activeChannel.badge && (
+                    <div className="absolute top-4 right-4 z-30 bg-white/10 backdrop-blur border border-white/20 px-3 py-1.5 rounded-full text-xs font-bold">
+                      {activeChannel.badge}
+                    </div>
+                  )}
+
+                  {/* Play button */}
+                  <button className="relative z-30 group/btn">
+                    <div className="absolute inset-0 bg-white/20 rounded-full blur-xl scale-150 opacity-0 group-hover/btn:opacity-100 transition" />
+                    <div className="relative w-20 h-20 bg-white/10 backdrop-blur-md border-2 border-white/30 rounded-full flex items-center justify-center hover:bg-white/20 transition shadow-2xl">
+                      <Play size={32} className="text-white fill-white ml-1" />
+                    </div>
+                  </button>
+
+                  {/* Bottom info */}
+                  <div className="absolute bottom-0 left-0 right-0 z-30 p-6 bg-gradient-to-t from-black to-transparent">
+                    <div className="flex items-end justify-between">
+                      <div>
+                        <p className="text-xs text-slate-400 mb-1 flex items-center gap-1">
+                          <MonitorPlay size={12} /> {activeChannel.desc}
+                        </p>
+                        <h3 className="text-2xl md:text-3xl font-black text-white">{activeChannel.name}</h3>
+                      </div>
+                      <span className="text-3xl">
+                        {categories.find(c => c.id === activeChannel.category)?.icon}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Info bar */}
+            <div className="flex items-center justify-between bg-white/4 border border-white/8 rounded-xl px-4 py-3 flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg flex items-center justify-center text-sm">
+                  {categories.find(c => c.id === activeChannel.category)?.icon}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">{activeChannel.name}</p>
+                  <p className="text-xs text-slate-500">{activeChannel.desc}</p>
+                </div>
+              </div>
+              <a
+                href={activeChannel.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300 font-bold bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-lg transition"
+              >
+                Not working? Open Source <ExternalLink size={12} />
+              </a>
+            </div>
+          </div>
+
+          {/* CHANNEL LIST — 3 cols */}
+          <div className="lg:col-span-3 flex flex-col bg-white/3 border border-white/8 rounded-2xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-white/8 flex items-center gap-2 bg-white/3">
+              <Tv size={16} className="text-cyan-400" />
+              <span className="font-bold text-sm text-white">
+                {activeCategory === "all" ? "All Channels" : categories.find(c => c.id === activeCategory)?.label}
+              </span>
+              <span className="ml-auto text-xs text-slate-500 bg-white/8 px-2 py-0.5 rounded-full">
+                {filteredChannels.length}
+              </span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1 max-h-[420px] lg:max-h-none">
+              {filteredChannels.map(ch => (
+                <button
+                  key={ch.id}
+                  onClick={() => switchChannel(ch)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left group border ${
+                    activeChannel.id === ch.id
+                      ? "bg-gradient-to-r from-red-600/20 to-orange-600/10 border-red-500/30 shadow-lg"
+                      : "bg-transparent border-transparent hover:bg-white/5 hover:border-white/8"
+                  }`}
+                >
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base shrink-0 ${
+                    activeChannel.id === ch.id ? "bg-red-500/20" : "bg-white/5"
+                  }`}>
+                    {categories.find(c => c.id === ch.category)?.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold truncate ${activeChannel.id === ch.id ? "text-white" : "text-slate-300"}`}>
+                      {ch.name}
+                    </p>
+                    <p className="text-[10px] text-slate-500 truncate">{ch.desc}</p>
+                  </div>
+                  {ch.badge && (
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded shrink-0 ${
+                      activeChannel.id === ch.id
+                        ? "bg-red-500/30 text-red-300"
+                        : "bg-white/8 text-slate-400"
+                    }`}>
+                      {ch.badge}
+                    </span>
+                  )}
+                  {activeChannel.id === ch.id && (
+                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shrink-0" />
+                  )}
                 </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── MATCH SCHEDULE ── */}
+        <div className="mb-14">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="bg-gradient-to-br from-amber-500 to-orange-500 p-2 rounded-xl shadow-lg shadow-amber-500/20">
+              <Trophy size={18} className="text-white" />
+            </div>
+            <h2 className="text-xl font-black text-white">Upcoming Matches</h2>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            {schedule.map((s, i) => (
+              <div
+                key={i}
+                className={`relative p-4 rounded-2xl border transition-all ${
+                  s.live
+                    ? "bg-red-500/8 border-red-500/20 shadow-lg shadow-red-500/5"
+                    : "bg-white/3 border-white/8"
+                }`}
+              >
+                {s.live && (
+                  <div className="absolute top-3 right-3 flex items-center gap-1 bg-red-500/20 border border-red-500/30 px-2 py-0.5 rounded-full">
+                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
+                    <span className="text-[9px] font-black text-red-400">LIVE</span>
+                  </div>
+                )}
+                <div className="text-2xl mb-2">{s.sport}</div>
+                <p className="text-white font-bold text-sm leading-tight mb-1">{s.match}</p>
+                <p className="text-xs text-slate-500 mb-2">{s.channel}</p>
+                <p className={`text-[10px] font-bold ${s.live ? "text-red-400" : "text-slate-600"}`}>
+                  {s.time}
+                </p>
+              </div>
             ))}
+          </div>
         </div>
 
-        {/* ========================================================
-            1. LIVE PLAYER & CHAT SECTION
-           ======================================================== */}
-        <div className="grid lg:grid-cols-10 gap-6 mb-16">
-            
-            {/* MAIN PLAYER (Left Side - 70%) */}
-            <div className="lg:col-span-7 flex flex-col gap-3">
-                <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-2xl group">
-                    <iframe 
-                        key={activeChannel.id} 
-                        src={activeChannel.url}
-                        width="100%" 
-                        height="100%" 
-                        frameBorder="0" 
-                        scrolling="no" 
-                        allowFullScreen={true}
-                        className="w-full h-full relative z-10"
-                        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                    ></iframe>
-
-                    {/* OVERLAY UI */}
-                    {showOverlay && (
-                        <div 
-                            className="absolute inset-0 z-20 bg-black/80 flex items-center justify-center cursor-pointer backdrop-blur-sm transition-all duration-500 group-hover:bg-black/60"
-                            onClick={() => setShowOverlay(false)}
-                        >
-                            <img src={activeChannel.img} className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-overlay" />
-                            <button className="relative z-30 bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-full font-bold flex items-center gap-3 shadow-[0_0_30px_rgba(220,38,38,0.6)] animate-pulse transition transform scale-105 text-lg border-2 border-red-400/50">
-                                <Play size={24} className="fill-white"/> CLICK TO PLAY & UNMUTE
-                            </button>
-                            <div className="absolute top-4 right-4 bg-red-600 px-3 py-1 rounded text-xs font-bold shadow-lg flex items-center gap-2 z-30">
-                                <span className="w-2 h-2 bg-white rounded-full animate-ping"></span> LIVE HD
-                            </div>
-                        </div>
-                    )}
-                </div>
-                
-                {/* Info & Source */}
-                <div className="flex justify-between items-center bg-[#161e2c] p-3 rounded-xl border border-slate-800 flex-wrap gap-2">
-                    <div>
-                        <h2 className="text-lg font-bold text-white">{activeChannel.name}</h2>
-                        <span className="text-xs text-slate-400 flex items-center gap-1"><MonitorPlay size={14}/> Extracted Stream</span>
-                    </div>
-                    <a href={activeChannel.url} target="_blank" className="flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300 font-bold bg-blue-500/10 px-4 py-2 rounded-lg transition border border-blue-500/20">
-                        Source Link <ExternalLink size={14}/>
-                    </a>
-                </div>
+        {/* ── MOVIES & SERIES ── */}
+        <div className="mb-14">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="bg-gradient-to-br from-pink-500 to-purple-600 p-2 rounded-xl shadow-lg shadow-pink-500/20">
+              <Film size={18} className="text-white" />
             </div>
+            <h2 className="text-xl font-black text-white">Movies & Series</h2>
+            <span className="text-xs text-slate-500 bg-white/5 px-2 py-1 rounded-full border border-white/8 ml-auto">
+              Free · No Subscription
+            </span>
+          </div>
 
-            {/* LIVE DISCUSSION CHAT (Right Side - 30%) */}
-            <div className="lg:col-span-3 bg-[#131b28] border border-slate-800 rounded-2xl flex flex-col h-[500px] lg:h-full overflow-hidden shadow-xl">
-                <div className="bg-[#1a2332] p-4 border-b border-slate-800 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <MessageSquare className="text-blue-500" size={20}/>
-                        <h3 className="font-bold text-white">Live Discussion</h3>
-                    </div>
-                    <span className="bg-red-500/20 text-red-500 text-[10px] font-bold px-2 py-1 rounded animate-pulse">LIVE</span>
+          <div className="grid md:grid-cols-2 gap-4">
+            {[
+              {
+                href: "https://www.cineby.gd/",
+                title: "CineBy",
+                badge: "NO ADS • HD",
+                badgeColor: "bg-pink-600",
+                desc: "Latest Netflix, Hollywood & Bollywood movies free.",
+                img: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1000",
+                border: "border-pink-500/20",
+                glow: "hover:shadow-pink-500/10",
+              },
+              {
+                href: "https://himovies.sx/",
+                title: "HiMovies",
+                badge: "FAST SERVER",
+                badgeColor: "bg-violet-600",
+                desc: "Best for TV Series, Anime & International Cinema.",
+                img: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=1000",
+                border: "border-violet-500/20",
+                glow: "hover:shadow-violet-500/10",
+              },
+            ].map((m, i) => (
+              <a
+                key={i}
+                href={m.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`relative h-52 md:h-64 rounded-2xl overflow-hidden group border ${m.border} shadow-xl hover:shadow-2xl ${m.glow} transition-all duration-500`}
+              >
+                <div className="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition z-10" />
+                <img
+                  src={m.img}
+                  alt={m.title}
+                  className="w-full h-full object-cover transition duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 z-20 flex flex-col justify-center items-center text-center p-6">
+                  <h3 className="text-3xl md:text-4xl font-black text-white mb-2 drop-shadow-lg">{m.title}</h3>
+                  <span className={`${m.badgeColor} text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg mb-2`}>
+                    {m.badge}
+                  </span>
+                  <p className="text-slate-200 text-xs md:text-sm drop-shadow-md">{m.desc}</p>
                 </div>
-                
-                {/* Chat Messages Area (Static for now, next step: Firebase) */}
-                <div className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar">
-                    <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold">A</div>
-                        <div>
-                            <span className="text-xs text-slate-400 font-bold">Admin <span className="text-[10px] ml-1 text-slate-500">Just now</span></span>
-                            <p className="text-sm text-slate-200 bg-slate-800 p-2.5 rounded-r-xl rounded-bl-xl mt-1 border border-slate-700 shadow-sm">Welcome to the chill zone! Stream buffering? Try refreshing.</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold">U</div>
-                        <div>
-                            <span className="text-xs text-slate-400 font-bold">User123 <span className="text-[10px] ml-1 text-slate-500">1 min ago</span></span>
-                            <p className="text-sm text-slate-200 bg-slate-800 p-2.5 rounded-r-xl rounded-bl-xl mt-1 border border-slate-700 shadow-sm">HD quality is amazing today 🔥</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Chat Input */}
-                <div className="p-4 bg-[#1a2332] border-t border-slate-800">
-                    {user ? (
-                        <div className="flex gap-2 relative">
-                            <input type="text" placeholder="Share your thoughts..." className="w-full bg-[#0b101a] border border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition pr-12 text-white"/>
-                            <button className="absolute right-2 top-2 bottom-2 bg-blue-600 hover:bg-blue-700 text-white w-10 rounded-lg flex items-center justify-center transition shadow-lg shadow-blue-500/30">
-                                <Send size={16}/>
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="text-center p-3 bg-slate-800/50 rounded-xl border border-slate-700">
-                            <p className="text-xs text-slate-400 mb-2">You must be logged in to chat.</p>
-                            <Link href="/login" className="text-sm font-bold text-blue-400 hover:text-blue-300 bg-blue-500/10 px-4 py-1.5 rounded-full inline-block">Login Here</Link>
-                        </div>
-                    )}
-                </div>
-            </div>
+              </a>
+            ))}
+          </div>
         </div>
 
-        {/* ========================================================
-            2. MOVIES & SERIES
-           ======================================================== */}
-        <div className="mb-16">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="bg-pink-600 p-2 rounded-lg shadow-lg shadow-pink-500/20"><Film className="text-white" size={20}/></div>
-                <h2 className="text-2xl font-bold">Movies & Series</h2>
+        {/* ── LIVE CHAT ── */}
+        <div className="mb-14">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="bg-gradient-to-br from-blue-500 to-cyan-500 p-2 rounded-xl shadow-lg shadow-blue-500/20">
+              <MessageSquare size={18} className="text-white" />
+            </div>
+            <h2 className="text-xl font-black text-white">Live Discussion</h2>
+            <span className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 px-3 py-1 rounded-full text-xs font-bold text-red-400 ml-2">
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /> LIVE
+            </span>
+          </div>
+
+          <div className="bg-white/3 border border-white/8 rounded-2xl overflow-hidden">
+            {/* Static messages */}
+            <div className="p-4 space-y-4 max-h-64 overflow-y-auto custom-scrollbar">
+              {[
+                { name: "Admin", color: "from-blue-500 to-cyan-500", msg: "Welcome! Stream buffering? Try refreshing or switching channel 🔄", time: "Just now" },
+                { name: "Aarav", color: "from-violet-500 to-purple-600", msg: "IPL is 🔥 today! Rohit playing amazing", time: "2 min ago" },
+                { name: "Sita", color: "from-emerald-500 to-teal-500", msg: "Cricbuzz HD link is working great! No lag 👏", time: "5 min ago" },
+                { name: "Kiran", color: "from-amber-500 to-orange-500", msg: "Can someone check if EPL link is working?", time: "8 min ago" },
+              ].map((msg, i) => (
+                <div key={i} className="flex gap-3">
+                  <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${msg.color} flex items-center justify-center text-xs font-bold shrink-0`}>
+                    {msg.name[0]}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold text-white">{msg.name}</span>
+                      <span className="text-[10px] text-slate-600">{msg.time}</span>
+                    </div>
+                    <p className="text-sm text-slate-300 bg-white/5 border border-white/6 rounded-xl rounded-tl-none px-3 py-2">
+                      {msg.msg}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4 md:gap-6">
-                <a href="https://www.cineby.gd/" target="_blank" className="relative h-48 md:h-64 rounded-2xl md:rounded-3xl overflow-hidden group border border-pink-500/30 shadow-lg block">
-                    <div className="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition z-10"/>
-                    <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1000" className="w-full h-full object-cover transition duration-700 group-hover:scale-110"/>
-                    <div className="absolute inset-0 z-20 flex flex-col justify-center items-center text-center p-6">
-                        <h3 className="text-3xl md:text-4xl font-black text-white mb-2 drop-shadow-lg">CineBy</h3>
-                        <span className="bg-pink-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg">NO ADS • HD</span>
-                        <p className="text-slate-200 mt-2 text-xs md:text-sm drop-shadow-md">Watch latest Netflix & Hollywood movies.</p>
-                    </div>
-                </a>
-
-                <a href="https://himovies.sx/" target="_blank" className="relative h-48 md:h-64 rounded-2xl md:rounded-3xl overflow-hidden group border border-purple-500/30 shadow-lg block">
-                    <div className="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition z-10"/>
-                    <img src="https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=1000" className="w-full h-full object-cover transition duration-700 group-hover:scale-110"/>
-                    <div className="absolute inset-0 z-20 flex flex-col justify-center items-center text-center p-6">
-                        <h3 className="text-3xl md:text-4xl font-black text-white mb-2 drop-shadow-lg">HiMovies</h3>
-                        <span className="bg-purple-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg">FAST SERVER</span>
-                        <p className="text-slate-200 mt-2 text-xs md:text-sm drop-shadow-md">Best alternative for TV Series & Cinema.</p>
-                    </div>
-                </a>
+            {/* Input */}
+            <div className="p-4 border-t border-white/8 bg-white/2">
+              {user ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={chatMsg}
+                    onChange={e => setChatMsg(e.target.value)}
+                    placeholder="Say something..."
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-600 outline-none focus:border-blue-500/50 transition"
+                  />
+                  <button className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:opacity-90 transition shadow-lg shadow-blue-500/20">
+                    <Send size={14} /> Send
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-slate-500">Login to join the discussion</p>
+                  <Link href="/login" className="bg-white/8 hover:bg-white/12 border border-white/10 text-white text-xs font-bold px-4 py-2 rounded-xl transition">
+                    Login →
+                  </Link>
+                </div>
+              )}
             </div>
+          </div>
         </div>
 
-        {/* ========================================================
-            3. COMMUNITY POSTS
-           ======================================================== */}
-        <div className="flex justify-between items-center mb-6 border-t border-slate-800 pt-8">
-            <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
-                <User className="text-blue-500" size={24}/> Student Community
-            </h2>
-            <Link href={user ? "/chill-zone/create" : "/login"} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-bold text-xs md:text-sm flex items-center gap-2 transition shadow-lg shadow-blue-500/20">
-                 {user ? <><Plus size={16}/> Create Post</> : <><User size={16}/> Login to Post</>}
+        {/* ── COMMUNITY POSTS ── */}
+        <div className="border-t border-white/6 pt-10">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-violet-500 to-pink-500 p-2 rounded-xl shadow-lg shadow-violet-500/20">
+                <User size={18} className="text-white" />
+              </div>
+              <h2 className="text-xl font-black text-white">Student Community</h2>
+            </div>
+            <Link
+              href={user ? "/chill-zone/create" : "/login"}
+              className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-pink-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg shadow-violet-500/20 hover:opacity-90 transition"
+            >
+              {user ? <><Plus size={14} /> Create Post</> : <><User size={14} /> Login to Post</>}
             </Link>
-        </div>
-        
-        {loading ? (
-            <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-500 w-8 h-8"/></div>
-        ) : (
-            <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
-                {posts.map((post, i) => (
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                        key={i} 
-                        onClick={() => setSelectedPost(post)}
-                        className="break-inside-avoid bg-[#161e2c] border border-slate-800 rounded-xl overflow-hidden hover:border-blue-500/50 transition group cursor-pointer hover:shadow-2xl hover:-translate-y-1 duration-300"
-                    >
-                        {post.images && post.images.length > 0 && (
-                            <div className="relative">
-                                <img src={post.images[0]} alt="Post" className="w-full h-auto object-cover border-b border-slate-800"/>
-                            </div>
-                        )}
-                        <div className="p-4">
-                            <div className="flex justify-between items-start mb-3">
-                                <span className="bg-slate-800 text-[10px] font-bold px-2 py-1 rounded text-blue-400 uppercase tracking-wide border border-slate-700">{post.category}</span>
-                                <span className="text-[10px] text-slate-500">{new Date(post.publishedAt).toLocaleDateString()}</span>
-                            </div>
-                            <h3 className="text-sm md:text-base font-bold mb-3 text-white line-clamp-2 group-hover:text-blue-400 transition">{post.title}</h3>
-                            <div className="flex items-center gap-2 text-xs text-slate-400">
-                                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-inner">
-                                    {post.author ? post.author[0].toUpperCase() : 'U'}
-                                </div>
-                                <span className="font-medium">{post.author || "Anonymous"}</span>
-                            </div>
-                        </div>
-                    </motion.div>
-                ))}
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="animate-spin text-violet-500 w-8 h-8" />
             </div>
-        )}
-
-        {/* MODAL (Post View) */}
-        <AnimatePresence>
-            {selectedPost && (
-                <motion.div 
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[2000] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 md:p-8"
-                    onClick={() => setSelectedPost(null)}
+          ) : posts.length === 0 ? (
+            <div className="text-center py-16 bg-white/2 border border-dashed border-white/10 rounded-2xl">
+              <div className="text-5xl mb-3">🍿</div>
+              <p className="text-slate-500 font-medium">No posts yet — be the first!</p>
+              <Link href={user ? "/chill-zone/create" : "/login"} className="inline-block mt-4 text-sm font-bold text-violet-400 hover:text-violet-300 transition">
+                Create a post →
+              </Link>
+            </div>
+          ) : (
+            <div className="columns-1 sm:columns-2 lg:columns-3 gap-5 space-y-5">
+              {posts.map((post, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08 }}
+                  onClick={() => setSelectedPost(post)}
+                  className="break-inside-avoid bg-white/3 border border-white/8 rounded-2xl overflow-hidden hover:border-violet-500/30 hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
                 >
-                    <motion.div 
-                        initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                        className="bg-[#0f172a] border border-slate-700 w-full max-w-5xl max-h-[90vh] rounded-2xl overflow-hidden flex flex-col md:flex-row shadow-2xl relative"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <button onClick={() => setSelectedPost(null)} className="absolute top-4 right-4 z-10 p-2 bg-black/50 backdrop-blur rounded-full hover:bg-red-500 transition text-white border border-white/10">
-                            <X size={20}/>
-                        </button>
-                        
-                        {/* Modal Image Side */}
-                        <div className="md:w-3/5 bg-[#0b101a] flex flex-col overflow-y-auto max-h-[40vh] md:max-h-full custom-scrollbar justify-center border-r border-slate-800">
-                            {selectedPost.images?.length > 0 ? selectedPost.images.map((img: string, idx: number) => (
-                                <img key={idx} src={img} className="w-full h-auto object-contain" />
-                            )) : (
-                                <div className="flex items-center justify-center h-full text-slate-600"><Film size={48} className="opacity-20"/></div>
-                            )}
-                        </div>
-                        
-                        {/* Modal Text Side */}
-                        <div className="md:w-2/5 p-6 md:p-8 flex flex-col h-full bg-[#161e2c] overflow-y-auto custom-scrollbar">
-                            <div className="flex items-center gap-2 mb-4">
-                                <span className="bg-blue-500/20 text-blue-400 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide border border-blue-500/20">{selectedPost.category}</span>
-                                <span className="text-xs text-slate-500">{new Date(selectedPost.publishedAt).toLocaleDateString()}</span>
-                            </div>
-                            <h2 className="text-2xl md:text-3xl font-bold mb-4 text-white leading-tight">{selectedPost.title}</h2>
-                            
-                            <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-800">
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-inner">
-                                    {selectedPost.author ? selectedPost.author[0].toUpperCase() : 'U'}
-                                </div>
-                                <div>
-                                    <p className="text-sm font-bold text-white">{selectedPost.author || "Anonymous"}</p>
-                                    <p className="text-[10px] text-slate-500">Student Member</p>
-                                </div>
-                            </div>
-
-                            <p className="text-slate-300 text-sm whitespace-pre-wrap leading-relaxed mb-6 flex-1">{selectedPost.body}</p>
-                            
-                            <div className="mt-auto pt-4 flex gap-4">
-                                <button className="flex-1 flex items-center justify-center gap-2 bg-slate-800 hover:bg-pink-600 hover:text-white px-4 py-3 rounded-xl transition font-bold text-xs text-slate-300 border border-slate-700 hover:border-pink-500"><Heart size={18}/> Like</button>
-                                <button className="flex-1 flex items-center justify-center gap-2 bg-slate-800 hover:bg-blue-600 hover:text-white px-4 py-3 rounded-xl transition font-bold text-xs text-slate-300 border border-slate-700 hover:border-blue-500"><Share2 size={18}/> Share</button>
-                            </div>
-                        </div>
-                    </motion.div>
+                  {post.images?.[0] && (
+                    <img src={post.images[0]} alt={post.title} className="w-full h-auto object-cover" />
+                  )}
+                  <div className="p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20 uppercase">
+                        {post.category}
+                      </span>
+                      <span className="text-[10px] text-slate-600">
+                        {new Date(post.publishedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-bold text-white mb-3 line-clamp-2 group-hover:text-violet-300 transition">
+                      {post.title}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 bg-gradient-to-br from-violet-500 to-pink-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white">
+                        {post.author?.[0]?.toUpperCase() || "U"}
+                      </div>
+                      <span className="text-xs text-slate-500">{post.author || "Anonymous"}</span>
+                    </div>
+                  </div>
                 </motion.div>
-            )}
-        </AnimatePresence>
-
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* ── POST MODAL ── */}
+      <AnimatePresence>
+        {selectedPost && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[2000] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 md:p-8"
+            onClick={() => setSelectedPost(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 16 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#0f172a] border border-white/10 w-full max-w-5xl max-h-[90vh] rounded-2xl overflow-hidden flex flex-col md:flex-row shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setSelectedPost(null)}
+                className="absolute top-4 right-4 z-10 p-2 bg-black/60 backdrop-blur rounded-full hover:bg-red-600 transition border border-white/10"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="md:w-3/5 bg-black overflow-y-auto max-h-[40vh] md:max-h-full custom-scrollbar flex items-center">
+                {selectedPost.images?.length > 0
+                  ? selectedPost.images.map((img: string, idx: number) => (
+                      <img key={idx} src={img} className="w-full h-auto object-contain" alt="" />
+                    ))
+                  : <div className="w-full h-full flex items-center justify-center text-slate-700"><Film size={48} /></div>
+                }
+              </div>
+
+              <div className="md:w-2/5 p-6 md:p-8 bg-[#0f172a] border-l border-white/8 flex flex-col overflow-y-auto">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20 uppercase self-start mb-3">
+                  {selectedPost.category}
+                </span>
+                <h2 className="text-xl font-black text-white mb-4 leading-tight">{selectedPost.title}</h2>
+                <div className="flex items-center gap-2 mb-5 pb-5 border-b border-white/8">
+                  <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-pink-500 rounded-full flex items-center justify-center text-xs font-bold">
+                    {selectedPost.author?.[0]?.toUpperCase() || "U"}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">{selectedPost.author || "Anonymous"}</p>
+                    <p className="text-[10px] text-slate-500">{new Date(selectedPost.publishedAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <p className="text-slate-300 text-sm leading-relaxed flex-1 whitespace-pre-wrap">{selectedPost.body}</p>
+                <div className="flex gap-3 mt-6 pt-5 border-t border-white/8">
+                  <button className="flex-1 flex items-center justify-center gap-2 bg-white/5 hover:bg-pink-600 border border-white/8 hover:border-pink-500 text-slate-300 hover:text-white px-4 py-2.5 rounded-xl text-xs font-bold transition">
+                    <Heart size={14} /> Like
+                  </button>
+                  <button className="flex-1 flex items-center justify-center gap-2 bg-white/5 hover:bg-blue-600 border border-white/8 hover:border-blue-500 text-slate-300 hover:text-white px-4 py-2.5 rounded-xl text-xs font-bold transition">
+                    <Share2 size={14} /> Share
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
