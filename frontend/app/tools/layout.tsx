@@ -10,6 +10,9 @@ export const metadata: Metadata = {
     "QR code generator Nepal",
     "TU result check",
     "voice to text Nepali",
+    "Image compressor",
+    "Image resize",
+    
   ],
   alternates: {
     canonical: "https://www.tikajoshi.com.np/tools",
