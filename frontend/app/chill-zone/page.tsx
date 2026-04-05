@@ -44,7 +44,7 @@ const channels = [
     id: "willow",
     category: "cricket",
     name: "Willow Cricket",
-    url: "https://ntv.cx/embed?t=VzdwekdHWjF5RmJWT2o3d0VPbFFnemNkcE1TcHVmRCt4VEgzS2dOK0RDNUlISDBJMzFMTnpjcGFVN092eG9aaw~~",
+    url: "https://embedsports.top/embed/admin/ppv-kolkata-knight-riders-vs-sunrisers-hyderabad/1",
     desc: "ICC Matches & USA Cricket",
     badge: null,
     img: "https://images.unsplash.com/photo-1631194758628-71ec7c35137e?q=80&w=1200",
