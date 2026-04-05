@@ -68,7 +68,7 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const initial = user?.name ? String(user.name)[0].toUpperCase() : "U";
+const initial = user?.displayName ? String(user.displayName)[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : "U";
 
   return (
     <>
@@ -232,7 +232,7 @@ export default function Navbar() {
                       {initial}
                     </div>
                     <div className="flex-1">
-                      <p className="font-semibold text-white text-sm">{user.name}</p>
+                     <p className="font-semibold text-white text-sm">{user.displayName || user.email}</p>
                       <button
                         onClick={() => { logout(); setMobileMenu(false); }}
                         className="text-xs text-red-400 flex items-center gap-1 mt-0.5"
