@@ -69,6 +69,8 @@ export default function Navbar() {
   }, []);
 
 const initial = user?.displayName ? String(user.displayName)[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : "U";
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "User";
+  const [profileOpen, setProfileOpen] = useState(false);
 
   return (
     <>
@@ -189,22 +191,72 @@ const initial = user?.displayName ? String(user.displayName)[0].toUpperCase() : 
             {/* User / Login */}
             <div className="hidden md:block">
               {user ? (
-                <button
-                  onClick={logout}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-white/8 hover:border-red-500/40 transition group"
-                >
-                  <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-cyan-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                    {initial}
-                  </div>
-                  <LogOut size={13} className="text-slate-500 group-hover:text-red-400 transition" />
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setProfileOpen(!profileOpen)}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-full glass border border-white/8 hover:border-indigo-500/40 transition"
+                  >
+                    <div className="w-7 h-7 bg-gradient-to-br from-indigo-500 to-cyan-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                      {initial}
+                    </div>
+                    <span className="text-xs text-slate-300 font-medium hidden lg:block max-w-[80px] truncate">
+                      {displayName}
+                    </span>
+                    <ChevronDown size={12} className={`text-slate-500 transition-transform ${profileOpen ? "rotate-180" : ""}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {profileOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-full mt-2 w-56 glass-card rounded-2xl p-2 shadow-2xl shadow-black/50 z-[9999] border border-white/10"
+                      >
+                        {/* Profile Header */}
+                        <div className="px-3 py-3 border-b border-white/8 mb-1">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
+                              {initial}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-white text-sm font-bold truncate">{displayName}</p>
+                              <p className="text-slate-500 text-[10px] truncate">{user.email}</p>
+                            </div>
+                          </div>
+                          {user.emailVerified === false && (
+                            <div className="mt-2 text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg">
+                              ⚠️ Email not verified
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Menu Items */}
+                        <Link href="/chill-zone/create" onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-300 hover:bg-white/8 hover:text-white transition">
+                          <span>📝</span> Create Post
+                        </Link>
+                        <Link href="/chill-zone" onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-300 hover:bg-white/8 hover:text-white transition">
+                          <span>🍿</span> Chill Zone
+                        </Link>
+
+                        <div className="border-t border-white/8 mt-1 pt-1">
+                          <button
+                            onClick={() => { logout(); setProfileOpen(false); }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition"
+                          >
+                            <LogOut size={14} /> Sign Out
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               ) : (
-                <Link
-                  href="/login"
-                  className="relative px-4 py-2 rounded-full text-xs font-bold text-white overflow-hidden group"
-                >
+                <Link href="/login" className="relative px-4 py-2 rounded-full text-xs font-bold text-white overflow-hidden group">
                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-cyan-600 transition group-hover:opacity-80" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-cyan-600 blur-md opacity-0 group-hover:opacity-60 transition" />
                   <span className="relative">Login</span>
                 </Link>
               )}

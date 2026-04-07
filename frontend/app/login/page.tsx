@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
   Mail, Lock, User, ArrowRight,
-  Loader2, Eye, EyeOff, Chrome, GraduationCap
+  Loader2, Eye, EyeOff, GraduationCap, CheckCircle
 } from "lucide-react";
 import Link from "next/link";
 
@@ -18,28 +18,44 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [gLoading, setGLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
     try {
       if (mode === "login") {
         await loginWithEmail(email, password);
       } else {
-        if (!name.trim()) { setError("Name is required"); setLoading(false); return; }
+        if (!name.trim()) {
+          setError("Name is required");
+          setLoading(false);
+          return;
+        }
+        if (password.length < 6) {
+          setError("Password must be at least 6 characters");
+          setLoading(false);
+          return;
+        }
         await registerWithEmail(email, password, name);
+        setSuccess("✅ Account created! Check your email for verification link. Then login.");
+        setMode("login");
+        setPassword("");
       }
     } catch (err: any) {
       const msg: Record<string, string> = {
-        "auth/user-not-found":    "No account with this email.",
-        "auth/wrong-password":    "Wrong password. Try again.",
-        "auth/email-already-in-use": "Email already registered.",
-        "auth/weak-password":     "Password must be 6+ characters.",
-        "auth/invalid-email":     "Invalid email address.",
-        "auth/invalid-credential": "Invalid email or password.",
+        "auth/user-not-found":       "No account found with this email.",
+        "auth/wrong-password":       "Wrong password. Try again.",
+        "auth/email-already-in-use": "Email already registered. Please login.",
+        "auth/weak-password":        "Password must be 6+ characters.",
+        "auth/invalid-email":        "Invalid email address.",
+        "auth/invalid-credential":   "Invalid email or password.",
+        "auth/too-many-requests":    "Too many attempts. Try again later.",
+        "auth/network-request-failed": "Network error. Check your connection.",
       };
-      setError(msg[err.code] || "Something went wrong. Try again.");
+      setError(msg[err.code] || `Error: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -51,7 +67,9 @@ export default function LoginPage() {
     try {
       await loginWithGoogle();
     } catch (err: any) {
-      setError("Google login failed. Try again.");
+      if (err.code !== "auth/popup-closed-by-user") {
+        setError("Google login failed. Try again.");
+      }
     } finally {
       setGLoading(false);
     }
@@ -63,15 +81,17 @@ export default function LoginPage() {
       {/* Aurora BG */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-cyan-600/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-violet-600/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="w-full max-w-4xl relative z-10">
-        <div className="glass-card rounded-3xl overflow-hidden flex shadow-2xl shadow-black/60 min-h-[580px]">
+        <div className="glass-card rounded-3xl overflow-hidden flex shadow-2xl shadow-black/60 min-h-[600px]">
 
           {/* LEFT — Branding */}
           <div className="hidden md:flex w-5/12 relative flex-col justify-between p-10 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-cyan-600 opacity-90" />
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.05%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]" />
-
+            <div className="absolute inset-0"
+              style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }}
+            />
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-8">
                 <div className="bg-white/20 backdrop-blur p-2.5 rounded-xl">
@@ -86,7 +106,6 @@ export default function LoginPage() {
                 IOE Notes · Loksewa Prep · Live Sports · Share Market · Smart Tools
               </p>
             </div>
-
             <div className="relative z-10 space-y-3">
               {[
                 { icon: "🎓", text: "Free IOE & Loksewa Notes" },
@@ -109,7 +128,7 @@ export default function LoginPage() {
               {(["login", "register"] as const).map((m) => (
                 <button
                   key={m}
-                  onClick={() => { setMode(m); setError(""); }}
+                  onClick={() => { setMode(m); setError(""); setSuccess(""); }}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
                     mode === m
                       ? "bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-lg"
@@ -130,7 +149,15 @@ export default function LoginPage() {
                 : "Create your free account today."}
             </p>
 
-            {/* Error */}
+            {/* Success Message */}
+            {success && (
+              <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm px-4 py-3 rounded-xl mb-5 flex items-start gap-2">
+                <CheckCircle size={16} className="shrink-0 mt-0.5" />
+                <span>{success}</span>
+              </div>
+            )}
+
+            {/* Error Message */}
             {error && (
               <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-xl mb-5">
                 ⚠️ {error}
@@ -223,7 +250,30 @@ export default function LoginPage() {
               )}
             </button>
 
-            <p className="text-center text-xs text-slate-600 mt-6">
+            {/* Forgot password */}
+            {mode === "login" && (
+              <p className="text-center text-xs text-slate-600 mt-4">
+                Forgot password?{" "}
+                <button
+                  onClick={async () => {
+                    if (!email) { setError("Enter your email first"); return; }
+                    const { sendPasswordResetEmail } = await import("firebase/auth");
+                    const { auth } = await import("@/lib/firebase");
+                    try {
+                      await sendPasswordResetEmail(auth, email);
+                      setSuccess("✅ Password reset email sent! Check your inbox.");
+                    } catch {
+                      setError("Failed to send reset email.");
+                    }
+                  }}
+                  className="text-indigo-400 hover:text-indigo-300 font-medium"
+                >
+                  Reset it
+                </button>
+              </p>
+            )}
+
+            <p className="text-center text-xs text-slate-600 mt-4">
               By continuing, you agree to Tikajoshi's{" "}
               <Link href="/contact" className="text-indigo-400 hover:text-indigo-300">Terms of Service</Link>
             </p>

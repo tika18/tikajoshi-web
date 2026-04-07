@@ -7,7 +7,7 @@ import {
   onAuthStateChanged, signOut,
   signInWithPopup, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, updateProfile,
-  User
+  sendEmailVerification, User
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
@@ -37,23 +37,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const loginWithGoogle = async () => {
-    await signInWithPopup(auth, googleProvider);
+    const result = await signInWithPopup(auth, googleProvider);
+    setUser(result.user);
     router.push("/chill-zone");
   };
 
   const loginWithEmail = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    setUser(result.user);
     router.push("/chill-zone");
   };
 
   const registerWithEmail = async (email: string, password: string, name: string) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName: name });
-    router.push("/chill-zone");
+    await sendEmailVerification(cred.user);
+    setUser(cred.user);
   };
 
   const logout = async () => {
     await signOut(auth);
+    setUser(null);
     router.push("/login");
   };
 
@@ -61,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider value={{
       user, loading,
       loginWithGoogle, loginWithEmail,
-      registerWithEmail, logout
+      registerWithEmail, logout,
     }}>
       {children}
     </AuthContext.Provider>
