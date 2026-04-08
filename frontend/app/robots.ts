@@ -6,11 +6,10 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        // ✅ यी pages Google ले index गर्नु हुँदैन
         disallow: [
-          "/studio/",   // Sanity CMS - private
-          "/login",     // Login page - user data
-          "/api/",      // API routes - not for Google
+          "/studio/",   // Sanity CMS interface
+          "/login",     // Auth routes
+          "/api/",      // Internal API routes
         ],
       },
     ],

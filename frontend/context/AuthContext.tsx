@@ -7,7 +7,7 @@ import {
   onAuthStateChanged, signOut,
   signInWithPopup, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, updateProfile,
-  sendEmailVerification, User
+  sendEmailVerification, sendPasswordResetEmail, User
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
@@ -18,6 +18,7 @@ interface AuthType {
   loginWithGoogle: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   registerWithEmail: (email: string, password: string, name: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -61,11 +62,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     router.push("/login");
   };
 
+  const resetPassword = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
+  };
+
   return (
     <AuthContext.Provider value={{
       user, loading,
       loginWithGoogle, loginWithEmail,
-      registerWithEmail, logout,
+      registerWithEmail, resetPassword, logout,
     }}>
       {children}
     </AuthContext.Provider>

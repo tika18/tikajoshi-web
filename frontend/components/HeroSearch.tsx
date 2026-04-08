@@ -60,8 +60,8 @@ export default function HeroSearch() {
 
       {/* Badge */}
       <div className="animate-fade-up delay-1 mb-6">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border border-indigo-500/20 text-xs font-semibold text-indigo-300 uppercase tracking-widest">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-card border border-primary/20 text-xs font-semibold text-primary uppercase tracking-widest shadow-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
           Nepal's #1 Student Platform
         </div>
       </div>
@@ -69,33 +69,33 @@ export default function HeroSearch() {
       {/* Headline */}
       <div className="animate-fade-up delay-2 text-center mb-4 max-w-4xl">
         <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-[0.95] tracking-tight">
-          <span className="text-white block">Tools for</span>
+          <span className="text-foreground block">Tools for</span>
           <span className="shimmer-text block mt-1">Smart Minds</span>
         </h1>
       </div>
 
       {/* Subheadline */}
       <div className="animate-fade-up delay-3 mb-10">
-        <p className="text-slate-400 text-center text-base md:text-lg max-w-xl leading-relaxed">
+        <p className="text-muted-foreground text-center text-base md:text-lg max-w-xl leading-relaxed">
           IOE Notes · Loksewa Prep · NEPSE Live · TU Results · Live Sports<br />
-          <span className="text-slate-500 text-sm">सबै एकै ठाउँमा — free, fast, always updated</span>
+          <span className="text-muted-foreground/80 text-sm">सबै एकै ठाउँमा — free, fast, always updated</span>
         </p>
       </div>
 
       {/* Search Bar */}
       <div className="animate-fade-up delay-4 w-full max-w-2xl relative z-20">
         <div className={`relative rounded-2xl transition-all duration-300 ${focused ? "grad-border" : ""}`}>
-          <div className={`flex items-center glass rounded-2xl px-5 py-4 gap-3 transition-all duration-300 ${
+          <div className={`flex items-center bg-card rounded-2xl px-5 py-4 gap-3 transition-all duration-300 border ${
             focused
-              ? "border-indigo-500/50 shadow-lg shadow-indigo-500/10"
-              : "border-white/8 hover:border-white/14"
+              ? "border-primary/50 shadow-lg shadow-primary/10"
+              : "border-border hover:border-border/80"
           }`}>
-            <Search size={18} className={`shrink-0 transition-colors ${focused ? "text-indigo-400" : "text-slate-500"}`} />
+            <Search size={18} className={`shrink-0 transition-colors ${focused ? "text-primary" : "text-muted-foreground"}`} />
             <input
               ref={inputRef}
               type="text"
               placeholder="Search tools, results, news..."
-              className="w-full bg-transparent outline-none text-white text-base placeholder:text-slate-600 font-medium"
+              className="w-full bg-transparent outline-none text-foreground text-base placeholder:text-muted-foreground/60 font-medium"
               value={query}
               onChange={e => setQuery(e.target.value)}
               onFocus={() => setFocused(true)}

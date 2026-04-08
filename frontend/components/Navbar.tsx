@@ -4,8 +4,7 @@ import { useTheme } from "next-themes";
 import { useAuth } from "@/context/AuthContext";
 import {
   GraduationCap, Moon, Sun, Search, Menu, X,
-  ChevronDown, LogOut, LogIn, Home, Zap,
-  BookOpen, BarChart2, Newspaper, Popcorn
+  ChevronDown, LogOut, LogIn, Zap
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -45,13 +44,16 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const { user, logout } = useAuth();
+  const [mounted, setMounted] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [activeDrop, setActiveDrop] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -85,32 +87,29 @@ const initial = user?.displayName ? String(user.displayName)[0].toUpperCase() : 
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-[60px] flex items-center justify-between gap-4">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group shrink-0" onClick={() => setMobileMenu(false)}>
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-cyan-500 rounded-xl blur-md opacity-60 group-hover:opacity-100 transition" />
-              <div className="relative bg-gradient-to-br from-indigo-600 to-cyan-500 p-2 rounded-xl text-white">
-                <GraduationCap size={18} />
-              </div>
+          <Link href="/" className="flex items-center gap-2 group shrink-0" onClick={() => setMobileMenu(false)}>
+            <div className="relative flex items-center justify-center w-8 h-8 bg-foreground text-background rounded-lg">
+              <GraduationCap size={18} className="font-bold" />
             </div>
-            <span className="text-lg font-black tracking-tight text-white font-[Syne]">
-              tika<span className="grad-indigo-cyan">joshi</span>
+            <span className="text-xl font-black tracking-tight text-foreground">
+              tikajoshi.
             </span>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            <Link href="/" className="px-3 py-1.5 text-sm font-medium text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition">
+          <nav className="hidden md:flex items-center gap-3">
+            <Link href="/" className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground rounded-lg hover:bg-foreground/5 transition">
               Home
             </Link>
             {navLinks.map((nav) => (
               <div key={nav.name} className="relative group">
                 <button
-                  className={`flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground rounded-lg hover:bg-foreground/5 transition`}
                   onMouseEnter={() => setActiveDrop(nav.name)}
                   onMouseLeave={() => setActiveDrop(null)}
                 >
                   {nav.name}
-                  <ChevronDown size={12} className={`transition-transform duration-300 ${activeDrop === nav.name ? "rotate-180 text-indigo-400" : ""}`} />
+                  <ChevronDown size={14} className={`transition-transform duration-300 ${activeDrop === nav.name ? "rotate-180 text-primary" : ""}`} />
                 </button>
 
                 <AnimatePresence>
@@ -139,13 +138,13 @@ const initial = user?.displayName ? String(user.displayName)[0].toUpperCase() : 
                 </AnimatePresence>
               </div>
             ))}
-            <Link href="/news" className="px-3 py-1.5 text-sm font-medium text-cyan-400 hover:text-cyan-300 rounded-lg hover:bg-cyan-500/10 transition">
+            <Link href="/news" className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.1em] text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 rounded-lg hover:bg-cyan-500/10 transition">
               News
             </Link>
-            <Link href="/chill-zone" className="px-3 py-1.5 text-sm font-medium text-violet-400 hover:text-violet-300 rounded-lg hover:bg-violet-500/10 transition">
-              Chill Zone
+            <Link href="/chill-zone" className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.1em] text-red-600 dark:text-red-500 hover:text-red-700 dark:hover:text-red-400 rounded-lg hover:bg-red-500/10 transition">
+              Live Sports
             </Link>
-            <Link href="/vehicles" className="px-3 py-1.5 text-sm font-medium text-amber-400 hover:text-amber-300 rounded-lg hover:bg-amber-500/10 transition">
+            <Link href="/vehicles" className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.1em] text-amber-600 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-400 rounded-lg hover:bg-amber-500/10 transition">
               Vehicles
             </Link>
           </nav>
@@ -173,11 +172,15 @@ const initial = user?.displayName ? String(user.displayName)[0].toUpperCase() : 
 
             {/* Theme Toggle */}
             <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition relative"
+              onClick={() => mounted && setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 dark:bg-white/5 dark:hover:bg-white/10 transition relative overflow-hidden"
+              aria-label="Toggle theme"
             >
-              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-amber-400 absolute" />
-              <Moon className="h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-indigo-400 absolute" />
+              {mounted && resolvedTheme === "dark" ? (
+                <Sun className="h-4 w-4 text-amber-400" />
+              ) : (
+                <Moon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+              )}
             </button>
 
             {/* Mobile menu btn */}
@@ -309,7 +312,7 @@ const initial = user?.displayName ? String(user.displayName)[0].toUpperCase() : 
                 {[
                   { href: "/", label: "Home", icon: "🏠" },
                   { href: "/news", label: "News", icon: "📰" },
-                  { href: "/chill-zone", label: "Chill Zone", icon: "🍿" },
+                  { href: "/chill-zone", label: "Live Sports", icon: "📺" },
                   { href: "/vehicles", label: "Vehicles", icon: "🏍️" },
                   { href: "/quiz", label: "Quiz", icon: "🧠" },
                   { href: "/contact", label: "Contact", icon: "💬" },

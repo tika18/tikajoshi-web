@@ -1,613 +1,604 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
+import { db } from "@/lib/firebase";
 import {
-  Play, Tv, Film, MonitorPlay, ExternalLink, Send,
-  MessageSquare, Radio, Zap, Globe, Trophy, ChevronRight
+  ref as dbRef, push, onValue, query,
+  orderByChild, limitToLast, serverTimestamp
+} from "firebase/database";
+import {
+  Play, Tv, ExternalLink, Send, Share2,
+  MessageSquare, Maximize, VolumeX, RefreshCw, ThumbsUp, Heart, Star
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import SofaScoreWidget from "@/components/SofaScoreWidget";
 
-// ============================================================
-// PREMIUM CHANNELS CONFIG
-// ============================================================
+// ─── CHANNELS ────────────────────────────────────────────────
+// ─── TRENDING MATCHES (Schedule Today) ──────────────────────
+const trendingMatches = [
+  { id: "ipl-rr-mi", title: "RR vs MI (Ads Free)", category: "IPL", status: "LIVE NOW",
+    team1: "https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/This_is_the_logo_for_Rajasthan_Royals%2C_a_cricket_team_playing_in_the_IPL.png/1280px-This_is_the_logo_for_Rajasthan_Royals.png",
+    team2: "https://upload.wikimedia.org/wikipedia/en/thumb/c/cd/Mumbai_Indians_Logo.svg/1200px-Mumbai_Indians_Logo.svg.png",
+    url: "https://w2.sportzsonline.click/channels/hd/hd1.php" },
+  { id: "ipl-rcb-csk", title: "RCB vs CSK (Hindi)", category: "IPL", status: "8:00 PM",
+    team1: "https://upload.wikimedia.org/wikipedia/en/thumb/2/2a/Royal_Challengers_Bengaluru_Logo.svg/1200px-Royal_Challengers_Bengaluru_Logo.svg.png",
+    team2: "https://upload.wikimedia.org/wikipedia/en/thumb/2/2b/Chennai_Super_Kings_Logo.svg/1200px-Chennai_Super_Kings_Logo.svg.png",
+    url: "https://mut001.myturn1.top:8088/live/webcricn04/playlist.m3u8?vidictid=20550319506" },
+  { id: "ucl-rm-bm", title: "Real Madrid vs Bayern", category: "UCL", status: "1:00 AM",
+    team1: "https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png",
+    team2: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg/1200px-FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg.png",
+    url: "https://live5.msrktz.app/live/97312754.m3u8" },
+  { id: "epl-ars-liv", title: "Arsenal vs Liverpool", category: "EPL", status: "LIVE NOW",
+    team1: "https://upload.wikimedia.org/wikipedia/en/thumb/5/53/Arsenal_FC.svg/1200px-Arsenal_FC.svg.png",
+    team2: "https://upload.wikimedia.org/wikipedia/en/thumb/0/0c/Liverpool_FC.svg/1200px-Liverpool_FC.svg.png",
+    url: "https://live5.msrktz.app/live/78905744.m3u8" }
+];
+
 const channels = [
-  // 🏏 CRICKET
-  {
-    id: "cricket-ntv-hd",
-    category: "cricket",
-    name: "Cricket Live HD",
-    url: "https://ntv.cx/embed?t=cEZxcDdEVEtaUE90NGFtWWo3UlYrWm1mZERuck5jVWxqMXowajNvbzJyblpueW0wUllIdUp1SkJMc3p5ZW1vbXljTVNGc3dQREZaemFEeENTa0pvOW5ybk0zcDRQK3gwYnB5N09rSEx5akxkVWhqbzE0eHlUc1NGV1kyenk0QWE~",
-    desc: "HD Premium Cricket Stream",
-    badge: "LIVE",
-    img: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=1200",
-  },
-  {
-    id: "cricbuzz-hd",
-    category: "cricket",
-    name: "Cricbuzz HD 🔥",
-    url: "https://playerado.top/embed2.php?id=osncric&v=su",
-    desc: "Full HD Premium • Best Quality",
-    badge: "HD",
-    img: "https://images.unsplash.com/photo-1531415074968-055a44455887?q=80&w=1200",
-  },
-  {
-    id: "star1",
-    category: "cricket",
-    name: "Star Sports 1",
-    url: "https://crichd.one/stream.php?id=starsp1",
-    desc: "IPL & India Cricket",
-    badge: "IPL",
-    img: "https://images.unsplash.com/photo-1531415074968-055a44455887?q=80&w=1200",
-  },
-  {
-    id: "willow",
-    category: "cricket",
-    name: "Willow Cricket",
-    url: "https://embedsports.top/embed/admin/ppv-kolkata-knight-riders-vs-sunrisers-hyderabad/1",
-    desc: "ICC Matches & USA Cricket",
-    badge: null,
-    img: "https://images.unsplash.com/photo-1631194758628-71ec7c35137e?q=80&w=1200",
-  },
-  {
-    id: "Star Sports 1 Hindi",
-    category: "cricket",
-    name: "Star Sports 1 Hindi",
-    url: "https://ntv.cx/embed?t=VzdwekdHWjF5RmJWT2o3d0VPbFFnemNkcE1TcHVmRCt4VEgzS2dOK0RDNnFhVlhIbXczZEdTTGxKWU44MTNIdg~~",
-    desc: "IPL & India Cricket",
-    badge: "LIVE",
-    img: "https://images.unsplash.com/photo-1531415074968-055a44455887?q=80&w=1200",
-  },
-  {
-    id: "sonysix",
-    category: "cricket",
-    name: "Sony Six",
-    url: "https://crichd.one/stream.php?id=sonysix",
-    desc: "Live Cricket & Sports",
-    badge: null,
-    img: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=1200",
-  },
-  // ⚽ FOOTBALL
-  {
-    id: "football-premier-ntv",
-    category: "football",
-    name: "Premier League HD",
-    url: "https://ntv.cx/embed?t=cEZxcDdEVEtaUE90NGFtWWo3UlYrWm1mZERuck5jVWxqMXowajNvbzJyblpueW0wUllIdUp1SkJMc3p5ZW1vbWt6WlE4UnNqVURsdWhXZTBhcHZSTzhJTkEvVHQycnJSeXNHYzExSmlEdXUrRWozZHduL1NIV3FGMTh0ODlrdGNGcTNHcE5rUC9BUElIVjZjUENDSDF3PT0~",
-    desc: "EPL Premium Stream",
-    badge: "EPL",
-    img: "https://images.unsplash.com/photo-1600250395178-40fe752e5189?q=80&w=1200",
-  },
-  {
-    id: "football-ntv-hd",
-    category: "football",
-    name: "Football Live HD",
-    url: "https://ntv.cx/embed?t=cEZxcDdEVEtaUE90NGFtWWo3UlYrWm1mZERuck5jVWxqMXowajNvbzJyblpueW0wUllIdUp1SkJMc3p5ZW1vbVMyN3dSNUR5dHFWblhTOU5CazZVWFlMUm9zZVFqNU55dFNaVm5mQTdwMWU4OEs1bmdjeXU4U3lWTURNeVBVbFlKT0tpSUNvUUkvMzE5VzlyWUxwTWF3PT0~",
-    desc: "Champions League & More",
-    badge: "LIVE",
-    img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200",
-  },
-  {
-    id: "football-hd",
-    category: "football",
-    name: "Football HD",
-    url: "https://istreameast.app/v17",
-    desc: "Premier League & La Liga",
-    badge: "EPL",
-    img: "https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?q=80&w=1200",
-  },
-  {
-    id: "bein",
-    category: "football",
-    name: "beIN Sports",
-    url: "https://crichd.one/stream.php?id=bein1",
-    desc: "Champions League & LaLiga",
-    badge: "UCL",
-    img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200",
-  },
-  {
-    id: "espn-football",
-    category: "football",
-    name: "ESPN Sports",
-    url: "https://istreameast.app/v3",
-    desc: "MLS, Serie A & More",
-    badge: null,
-    img: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=1200",
-  },
-  // 🏀 NBA & BASKETBALL
-  {
-    id: "nba-tv",
-    category: "nba",
-    name: "NBA TV Live",
-    url: "https://istreameast.app/v4",
-    desc: "NBA Games & Highlights",
-    badge: "NBA",
-    img: "https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1200",
-  },
-  {
-    id: "nba-live-hd",
-    category: "nba",
-    name: "NBA Live HD",
-    url: "https://ntv.cx/embed?t=RnBicEVST3ZWdWxIOTdKVHE4MlUycy92eDUvdG80bjlEK3VWOU9rOFg5SHhMZnFZREY1TGpxQk9pSncxSmhncjQ5R0JVR3NGWW1oTWNONFNNOXhiWitVQlNtRWtmQ2h1R1RreFhwRWlKd3M9",
-    desc: "High Quality NBA Stream",
-    badge: "LIVE",
-    img: "https://images.unsplash.com/photo-1515523110800-9415d13b84a8?q=80&w=1200",
-  },
-  {
-    id: "espn-nba",
-    category: "nba",
-    name: "ESPN NBA",
-    url: "https://istreameast.app/v5",
-    desc: "Playoffs & Finals",
-    badge: null,
-    img: "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=1200",
-  },
-  // 🏎️ F1 & MOTORSPORT
-  {
-    id: "f1-sky",
-    category: "f1",
-    name: "Sky Sports F1",
-    url: "https://istreameast.app/v6",
-    desc: "Formula 1 Grand Prix",
-    badge: "F1",
-    img: "https://images.unsplash.com/photo-1647026027895-15b9be40f6f8?q=80&w=1200",
-  },
-  // 📺 NEPALI TV
-  {
-    id: "ntv",
-    category: "nepali",
-    name: "NTV Nepal",
-    url: "https://www.youtube.com/embed/live_stream?channel=UCnZBNBXSV9MYrPS1_LGk7Gg&autoplay=1",
-    desc: "Nepal Television Live",
-    badge: "🇳🇵",
-    img: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?q=80&w=1200",
-  },
-  {
-    id: "kantipur",
-    category: "nepali",
-    name: "Kantipur TV",
-    url: "https://www.youtube.com/embed/live_stream?channel=UCQHh1T9A719DsApPTEMSUaQ&autoplay=1",
-    desc: "Kantipur Live News",
-    badge: "NEWS",
-    img: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?q=80&w=1200",
-  },
-  {
-    id: "avr",
-    category: "nepali",
-    name: "AP1 HD Nepal",
-    url: "https://www.youtube.com/embed/live_stream?channel=UCQmkDFqm6HM2PktnUPaEGgQ&autoplay=1",
-    desc: "AP1 Television Live",
-    badge: null,
-    img: "https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?q=80&w=1200",
-  },
+  // CRICKET
+  { id: "cricbuzz-hd", category: "CRICKET", name: "Cricbuzz HD 🔥",
+    url: "https://playerado.top/embed2.php?id=osncric&v=su", desc: "Full HD Premium • Best Quality", badge: "HD", views: "3.2K LIVE", img: "https://upload.wikimedia.org/wikipedia/commons/e/e0/Cricbuzz_Logo.png" },
+  { id: "star1", category: "CRICKET", name: "Star Sports 1",
+    url: "https://crichd.one/stream.php?id=starsp1", desc: "IPL & India Cricket", badge: "IPL", views: "1.9K LIVE", img: "https://upload.wikimedia.org/wikipedia/en/thumb/6/6b/Star_Sports_Logo.svg/1200px-Star_Sports_Logo.svg.png" },
+  { id: "star-hindi", category: "CRICKET", name: "Star Sports Hindi",
+    url: "https://newcdn.tamils.click/live/tracks-v1a1/mono.m3u8", desc: "IPL Hindi Commentary", badge: "HINDI", views: "4.5K LIVE", img: "https://upload.wikimedia.org/wikipedia/en/thumb/6/6b/Star_Sports_Logo.svg/1200px-Star_Sports_Logo.svg.png" },
+  { id: "willow", category: "CRICKET", name: "Willow Cricket",
+    url: "https://ntv.cx/embed?t=RnBicEVST3ZWdWxIOTdKVHE4MlUycy92eDUvdG80bjlEK3VWOU9rOFg5SHhMZnFZREY1TGpxQk9pSncxSmhncjQ5R0JVR3NGWW1oTWNONFNNOXhiWitVQlNtRWtmQ2h1R1RreFhwRWlKd3M9", desc: "US/Canada Cricket Broadcaster", badge: "LIVE", views: "850 LIVE", img: "https://upload.wikimedia.org/wikipedia/en/2/29/Willow_TV_logo.png" },
+  { id: "ipl-hd", category: "CRICKET", name: "IPL Premium HD",
+    url: "https://w2.sportzsonline.click/channels/hd/hd1.php", desc: "Tata IPL Live Feed", badge: "HD", views: "9.1K LIVE", img: "https://upload.wikimedia.org/wikipedia/en/thumb/8/84/Indian_Premier_League_Official_Logo.svg/1200px-Indian_Premier_League_Official_Logo.svg.png" },
+  // FOOTBALL
+  { id: "football-premier", category: "FOOTBALL", name: "Premier League HD",
+    url: "https://live5.msrktz.app/live/78905744.m3u8", desc: "EPL Premium Stream", badge: "EPL", views: "5.1K LIVE", img: "https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Premier_League_Logo.svg/1200px-Premier_League_Logo.svg.png" },
+  { id: "bein", category: "FOOTBALL", name: "beIN Sports HD",
+    url: "https://crichd.one/stream.php?id=bein1", desc: "Champions League & LaLiga", badge: "UCL", views: "2.3K LIVE", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/BeIN_Sports_France_logo.svg/1200px-BeIN_Sports_France_logo.svg.png" },
+  { id: "espn-fc", category: "FOOTBALL", name: "ESPN FC",
+    url: "https://crichd.one/stream.php?id=espnfc", desc: "Global Football Coverage", badge: "LIVE", views: "740 LIVE", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/ESPN_logo.svg/1200px-ESPN_logo.svg.png" },
+  // BASKETBALL
+  { id: "nba-tv", category: "BASKETBALL", name: "NBA TV Live",
+    url: "https://istreameast.app/v4", desc: "NBA Games & Highlights", badge: "NBA", views: "1.5K LIVE", img: "https://upload.wikimedia.org/wikipedia/en/thumb/0/03/National_Basketball_Association_logo.svg/1200px-National_Basketball_Association_logo.svg.png" },
+  // MOTOR-SPORTS
+  { id: "f1-sky", category: "MOTOR-SPORTS", name: "Sky Sports F1",
+    url: "https://istreameast.app/v6", desc: "Formula 1 Grand Prix", badge: "F1", views: "3.8K LIVE", img: "https://upload.wikimedia.org/wikipedia/en/thumb/3/30/Sky_Sports_F1_logo.svg/1200px-Sky_Sports_F1_logo.svg.png" },
+  // TV CHANNEL & OTHERS
+  { id: "ufc", category: "OTHERS", name: "UFC Fight Night",
+    url: "https://ww1.sportszonline.click/channels/hd/hd2.php", desc: "MMA Action LIVE", badge: "UFC", views: "4.8K LIVE", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/UFC_Logo.svg/1200px-UFC_Logo.svg.png" },
 ];
 
-const categories = [
-  { id: "all",     label: "All",        icon: "🔥", color: "from-zinc-500 to-zinc-400" },
-  { id: "cricket", label: "Cricket",    icon: "🏏", color: "from-emerald-500 to-teal-500" },
-  { id: "football",label: "Football",   icon: "⚽", color: "from-blue-600 to-indigo-500" },
-  { id: "nba",     label: "NBA",        icon: "🏀", color: "from-amber-500 to-orange-500" },
-  { id: "f1",      label: "F1",         icon: "🏎️", color: "from-red-600 to-rose-500" },
-  { id: "nepali",  label: "Nepali TV",  icon: "🇳🇵", color: "from-blue-600 to-red-600" },
-];
+const categories = ["ALL", "CRICKET", "FOOTBALL", "BASKETBALL", "MOTOR-SPORTS", "TV CHANNEL", "OTHERS"];
 
-const schedule = [
-  { time: "Today 7:30 PM", match: "India vs Australia", sport: "🏏", channel: "Star Sports 1", live: true },
-  { time: "Today 9:00 PM", match: "Man City vs Arsenal", sport: "⚽", channel: "beIN Sports", live: true },
-  { time: "Tomorrow 6:00 AM", match: "Lakers vs Warriors", sport: "🏀", channel: "NBA TV", live: false },
-  { time: "Sunday 5:00 PM", match: "Monaco Grand Prix", sport: "🏎️", channel: "Sky F1", live: false },
-  { time: "Tomorrow 7:00 PM", match: "Pakistan vs England", sport: "🏏", channel: "Ten Sports", live: false },
-];
+// ─── CHAT MESSAGE TYPE ────────────────────────────────────────
+interface ChatMsg {
+  id: string;
+  uid: string;
+  name: string;
+  initial: string;
+  text: string;
+  ts: number;
+}
 
-export default function ChillZone() {
+export default function LiveTVPage() {
   const { user } = useAuth();
   const [activeChannel, setActiveChannel] = useState(channels[0]);
   const [showOverlay, setShowOverlay] = useState(true);
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeCategory, setActiveCategory] = useState("ALL");
+  const [activeViewMode, setActiveViewMode] = useState<"PLAYER"|"SCHEDULE">("PLAYER");
+  const [scheduleSport, setScheduleSport] = useState("cricket");
   const [chatMsg, setChatMsg] = useState("");
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [sending, setSending] = useState(false);
+  
+  // Fake reaction counters
+  const [reactions, setReactions] = useState({ fire: 124, heart: 89, clap: 42, wow: 31 });
 
-  const filteredChannels = activeCategory === "all"
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // ── Listen to Firebase chat ──────────────────────────────
+  useEffect(() => {
+    const msgsRef = query(
+      dbRef(db, "livechat/messages"),
+      orderByChild("ts"),
+      limitToLast(60)
+    );
+    const unsub = onValue(msgsRef, (snap) => {
+      const data = snap.val();
+      if (!data) return;
+      const arr: ChatMsg[] = Object.entries(data).map(([id, v]: any) => ({
+        id,
+        uid: v.uid,
+        name: v.name,
+        initial: v.initial,
+        text: v.text,
+        ts: v.ts,
+      }));
+      arr.sort((a, b) => a.ts - b.ts);
+      setMessages(arr);
+    });
+    return () => unsub();
+  }, []);
+
+  // ── Auto-scroll ──────────────────────────────────────────
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // ── Send message ─────────────────────────────────────────
+  const sendMessage = async () => {
+    const text = chatMsg.trim();
+    if (!text || !user || sending) return;
+    setSending(true);
+    setChatMsg("");
+    const displayName = user.displayName || user.email?.split("@")[0] || "User";
+    await push(dbRef(db, "livechat/messages"), {
+      uid: user.uid,
+      name: displayName,
+      initial: displayName[0].toUpperCase(),
+      text,
+      ts: serverTimestamp(),
+    });
+    setSending(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  };
+
+  const filteredChannels = activeCategory === "ALL"
     ? channels
     : channels.filter(c => c.category === activeCategory);
 
   const switchChannel = (ch: typeof channels[0]) => {
     setActiveChannel(ch);
     setShowOverlay(true);
-    // Slight scroll to top logic for mobile users clicking a channel far down
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleRefresh = () => {
+    if (iframeRef.current) {
+      const currentSrc = iframeRef.current.src;
+      iframeRef.current.src = "";
+      setTimeout(() => {
+        if (iframeRef.current) iframeRef.current.src = currentSrc;
+      }, 100);
+    }
+  };
+
+  const handleFullscreen = () => {
+    if (iframeRef.current) {
+      if (iframeRef.current.requestFullscreen) {
+        iframeRef.current.requestFullscreen();
+      }
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await navigator.share({
+        title: activeChannel.name,
+        text: "Watching Live Sports on Tikajoshi HD!",
+        url: window.location.href,
+      });
+    } catch (e) {
+      console.log("Share skipped", e);
+    }
+  };
+
+  // ── Avatar colors ────────────────────────────────────────
+  const avatarColors = [
+    "from-red-500 to-orange-500",
+    "from-blue-500 to-cyan-500",
+    "from-emerald-500 to-teal-500",
+    "from-violet-500 to-purple-500",
+  ];
+  const colorFor = (uid: string) => avatarColors[uid.charCodeAt(0) % avatarColors.length];
+
   return (
-    <div className="min-h-screen bg-[#030712] text-white selection:bg-red-500/30">
+    <div className="min-h-screen bg-background text-foreground font-sans font-inter pb-20 transition-colors duration-300">
       <Navbar />
 
-      <main className="max-w-[1600px] mx-auto pt-24 pb-20 px-4 md:px-6 lg:px-8">
-        {/* HEADER */}
-        <div className="mb-6 md:mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 relative z-10">
-          <div>
-            <div className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-3 py-1 rounded-full mb-4 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
-              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
-              <span className="text-red-400 text-xs font-black uppercase tracking-widest flex shrink-0">Live Premium Access</span>
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tight leading-[1.1]">
-              <span className="text-white">Live Sports </span>
-              <br className="hidden lg:block"/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500">& Movies</span>
-              <span className="ml-3">🎟️</span>
-            </h1>
-            <p className="text-slate-400 mt-4 text-sm md:text-lg max-w-xl font-medium">
-              Experience edge-to-edge high-definition viewing. Unlimited cricket, football, F1, and cinema directly in your browser.
-            </p>
+      <main className="max-w-[1500px] mx-auto pt-24 px-4 md:px-6">
+        
+        {/* ── TRENDING MATCHES TODAY ── */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            <h2 className="text-sm font-bold text-foreground/80 uppercase tracking-widest">Trending Today</h2>
           </div>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-300 font-bold font-mono">
-            <div className="flex items-center gap-2 bg-white/5 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 shadow-lg">
-              <Globe size={16} className="text-cyan-400" />
-              <span>{channels.length} HD Streams</span>
-            </div>
-            <div className="flex items-center gap-2 bg-white/5 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 shadow-lg">
-              <Zap size={16} className="text-yellow-400" />
-              <span>Zero Buffering</span>
-            </div>
-          </div>
-        </div>
-
-        {/* MAIN LAYOUT: PLAYER (Left) + CHAT (Right) */}
-        <div className="flex flex-col xl:flex-row gap-6 mb-12">
-          
-          {/* THEATER PLAYER SECTION */}
-          <div className="flex-1 flex flex-col drop-shadow-2xl relative z-20">
-            {/* Edge-to-edge styled video wrapper */}
-            <div className="relative w-full aspect-video bg-black rounded-2xl md:rounded-3xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.4)] ring-1 ring-white/10 group">
-              {/* Background Glow */}
-              <div className="absolute -inset-10 bg-gradient-to-r from-blue-600/20 to-cyan-600/20 blur-3xl rounded-[3rem] -z-10 group-hover:opacity-100 transition duration-1000 opacity-50" />
-              
-              <iframe
-                key={activeChannel.id}
-                src={activeChannel.url}
-                width="100%"
-                height="100%"
-                frameBorder="0"
-                scrolling="no"
-                allowFullScreen
-                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                className="w-full h-full z-10 relative bg-black"
-                style={{ borderRadius: 'inherit' }}
-              />
-
-              {/* OVERLAY FOR CLICK TO PLAY */}
-              {showOverlay && (
-                <div
-                  className="absolute inset-0 z-20 flex flex-col items-center justify-center cursor-pointer transition-all duration-300"
-                  style={{ background: "radial-gradient(circle at center, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.95) 100%)" }}
-                  onClick={() => setShowOverlay(false)}
-                >
-                  <img
-                    src={activeChannel.img}
-                    className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-luminosity scale-105 group-hover:scale-100 transition-transform duration-1000"
-                    alt=""
-                  />
-
-                  {/* Player Start Button UI */}
-                  <div className="relative z-30 transform hover:scale-110 transition duration-300 ease-out flex flex-col items-center">
-                    <div className="absolute inset-0 bg-cyan-500/30 blur-2xl rounded-full scale-150 animate-pulse" />
-                    <button className="w-24 h-24 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center text-white shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:bg-white/20 hover:text-cyan-300 transition-colors">
-                      <Play size={40} className="ml-2 fill-current" />
-                    </button>
-                    <h2 className="mt-6 text-2xl md:text-3xl font-black tracking-tight text-white drop-shadow-md">
-                      {activeChannel.name}
-                    </h2>
-                    <p className="text-cyan-400 text-sm font-bold tracking-widest uppercase mt-1 drop-shadow-xl flex items-center gap-2">
-                       <span className="w-2 h-2 bg-cyan-400 rounded-full animate-ping" />
-                       Click to Watch Free
-                    </p>
-                  </div>
-                  
-                  {/* Badges top absolute */}
-                  {activeChannel.badge && (
-                    <div className="absolute top-6 right-6 z-30 bg-red-600 border border-red-500 px-4 py-1.5 rounded-full text-xs font-black shadow-lg shadow-red-500/40 tracking-wider">
-                      {activeChannel.badge}
-                    </div>
-                  )}
-                  <div className="absolute top-6 left-6 z-30 flex items-center gap-2 bg-black/40 backdrop-blur-xl border border-white/10 px-4 py-1.5 rounded-full text-xs font-bold text-slate-300">
-                    <MonitorPlay size={12} className="text-cyan-400"/>
-                    High Definition
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* ACTION BAR */}
-            <div className="flex flex-col sm:flex-row items-center justify-between mt-5 gap-4">
-              <div className="flex items-center gap-4 bg-white/[0.03] backdrop-blur-md border border-white/5 py-3 px-5 rounded-2xl w-full sm:w-auto">
-                <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center text-xl shadow-inner border border-white/10">
-                  {categories.find(c => c.id === activeChannel.category)?.icon}
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-white">{activeChannel.name}</h3>
-                  <p className="text-sm font-medium text-slate-400">{activeChannel.desc}</p>
-                </div>
-              </div>
-              <a
-                href={activeChannel.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center gap-2 text-sm font-bold bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 px-6 py-4 rounded-2xl transition w-full sm:w-auto text-slate-300 hover:text-white justify-center"
+          <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar snap-x">
+            {trendingMatches.map(match => (
+              <button 
+                key={match.id}
+                onClick={() => {
+                  setActiveChannel({ id: match.id, category: match.category, name: match.title, url: match.url, desc: "Live Event", badge: "LIVE", views: "Trending", img: "" });
+                  setShowOverlay(true);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="flex items-center gap-4 min-w-[280px] bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] p-3 rounded-xl transition-all shrink-0 snap-start group"
               >
-                External Player <ExternalLink size={16} className="text-slate-500 group-hover:text-cyan-400 transition" />
-              </a>
-            </div>
-          </div>
-
-          {/* LIVE CHAT SECTION (Right Side Pane) */}
-          <div className="w-full xl:w-[400px] shrink-0 flex flex-col h-[500px] xl:h-auto bg-[#0a0f1c] border border-white/[0.06] rounded-3xl overflow-hidden shadow-2xl relative">
-            <div className="px-6 py-5 border-b border-white/[0.06] bg-black/20 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <MessageSquare size={18} className="text-indigo-400" />
-                <h3 className="font-black text-white text-lg">Live Chat</h3>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                <span className="text-[10px] uppercase font-black tracking-wider text-emerald-400">Online</span>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5 custom-scrollbar bg-gradient-to-b from-transparent to-black/20">
-              {[
-                { name: "Admin", color: "from-blue-500 to-indigo-600", msg: "Welcome to Live Sports & Movies! If the stream buffers, try pausing for 5 seconds.", time: "Pinned" },
-                { name: "Rahul", color: "from-amber-400 to-orange-500", msg: "Wow, the premier league stream is buttery smooth 🔥", time: "just now" },
-                { name: "Ashish", color: "from-emerald-400 to-teal-600", msg: "Cricket link working perfectly. No lag!", time: "1 min ago" },
-                { name: "Prashant", color: "from-violet-500 to-purple-600", msg: "Guys switch to F1, the race is starting!!", time: "3 mins ago" },
-              ].map((msg, i) => (
-                <div key={i} className="flex gap-3 relative group/msg">
-                  <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${msg.color} flex items-center justify-center text-sm font-black shrink-0 border border-white/20 shadow-lg`}>
-                    {msg.name[0]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className="text-sm font-bold text-slate-200">{msg.name}</span>
-                      <span className="text-[10px] font-medium text-slate-500">{msg.time}</span>
-                    </div>
-                    <p className={`text-sm ${msg.name === "Admin" ? "text-blue-300 font-medium" : "text-slate-400"} leading-relaxed`}>
-                      {msg.msg}
-                    </p>
-                  </div>
+                <div className="flex items-center gap-2 bg-white/5 p-2 rounded-lg">
+                  <img src={match.team1} alt="Team 1" className="w-8 h-8 object-contain" />
+                  <span className="text-xs font-bold text-slate-500">VS</span>
+                  <img src={match.team2} alt="Team 2" className="w-8 h-8 object-contain" />
                 </div>
-              ))}
-            </div>
-
-            <div className="p-4 bg-black/40 border-t border-white/[0.06]">
-              {user ? (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={chatMsg}
-                    onChange={e => setChatMsg(e.target.value)}
-                    placeholder="Send a message..."
-                    className="flex-1 bg-white/[0.05] border border-white/[0.05] rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition shadow-inner"
-                  />
-                  <button className="bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-xl flex items-center justify-center transition shadow-lg shadow-indigo-600/30 w-12 shrink-0">
-                    <Send size={18} className="translate-x-[1px]" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between px-2">
-                  <span className="text-sm font-medium text-slate-500">Sign in to chat</span>
-                  <Link href="/login" className="text-xs font-black uppercase tracking-wider bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-white transition">
-                    Login
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* HORIZONTAL CHANNEL NAVIGATION (NETFLIX STYLE) */}
-        <div className="mb-14">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-4">
-            <div>
-              <h2 className="text-2xl font-black text-white flex items-center gap-3">
-                <Tv className="text-indigo-400" /> Premium Channels
-              </h2>
-              <p className="text-sm font-medium text-slate-500 mt-1">Select a stream below</p>
-            </div>
-            
-            {/* Category Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 sm:pb-0 hide-scroll">
-              {categories.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-black tracking-wide whitespace-nowrap transition-all duration-300 border ${
-                    activeCategory === cat.id
-                      ? `bg-white text-black border-transparent shadow-[0_0_20px_rgba(255,255,255,0.2)]`
-                      : "bg-[#0f172a] border-white/5 text-slate-400 hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  <span className="text-lg">{cat.icon}</span> 
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
-            {filteredChannels.map(ch => (
-              <button
-                key={ch.id}
-                onClick={() => switchChannel(ch)}
-                className={`relative group rounded-2xl overflow-hidden transition-all duration-500 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 text-left ${
-                  activeChannel.id === ch.id 
-                  ? "ring-2 ring-white ring-offset-4 ring-offset-[#030712] scale-[1.02] shadow-2xl" 
-                  : "hover:scale-105 hover:shadow-xl opacity-80 hover:opacity-100"
-                }`}
-              >
-                {/* Thumb Aspect */}
-                <div className="aspect-[4/5] relative w-full bg-slate-900 border border-white/10 rounded-2xl overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10 opacity-90 group-hover:opacity-100 transition" />
-                  <img src={ch.img} className="w-full h-full object-cover transition duration-700 group-hover:scale-110 blur-[2px] group-hover:blur-0" alt="" />
-                  
-                  {activeChannel.id === ch.id && (
-                    <div className="absolute top-3 left-3 z-20 w-8 h-8 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/40 shadow-lg animate-pulse">
-                      <Play size={14} className="fill-white text-white ml-0.5" />
-                    </div>
-                  )}
-
-                  <div className="absolute bottom-0 left-0 right-0 p-4 z-20 flex flex-col justify-end">
-                    {ch.badge && (
-                      <span className="self-start text-[9px] font-black tracking-widest uppercase bg-red-600 text-white px-2 py-0.5 rounded-full shadow-md mb-2">
-                        {ch.badge}
-                      </span>
-                    )}
-                    <h4 className="text-white font-black text-sm md:text-base leading-tight drop-shadow-lg mb-1">{ch.name}</h4>
-                    <p className="text-xs font-semibold text-slate-300 drop-shadow flex items-center gap-1 line-clamp-1">
-                       <span className="opacity-70">{categories.find(c=>c.id === ch.category)?.icon}</span> {ch.desc}
-                    </p>
-                  </div>
+                <div className="text-left">
+                  <span className="block text-xs font-black text-red-500 mb-0.5 uppercase">{match.status}</span>
+                  <span className="block text-sm font-bold text-foreground group-hover:text-red-400 transition-colors">{match.title}</span>
                 </div>
               </button>
             ))}
           </div>
         </div>
 
-        {/* SCHEDULE */}
-        <div className="mb-16">
-          <div className="flex items-center gap-3 mb-6">
-            <Trophy className="text-amber-400" size={20}/>
-            <h2 className="text-2xl font-black text-white">Upcoming Matches</h2>
+        {/* ── TOP SEGMENTED CONTROL ── */}
+        <div className="flex justify-center mb-10">
+          <div className="bg-card border border-border p-1.5 rounded-2xl flex items-center gap-1 shadow-2xl">
+            <button
+              onClick={() => setActiveViewMode("PLAYER")}
+              className={`px-8 py-3 rounded-xl font-bold text-sm tracking-widest uppercase transition-all duration-300 ${activeViewMode === "PLAYER" ? "bg-red-600 text-white shadow-lg shadow-red-600/30" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Live Streams
+            </button>
+            <button
+              onClick={() => setActiveViewMode("SCHEDULE")}
+              className={`px-8 py-3 rounded-xl font-bold text-sm tracking-widest uppercase transition-all duration-300 ${activeViewMode === "SCHEDULE" ? "bg-red-600 text-white shadow-lg shadow-red-600/30" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Global Schedule
+            </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {schedule.map((s, i) => (
-              <div
-                key={i}
-                className={`relative px-5 py-4 rounded-2xl border backdrop-blur-sm transition-all ${
-                  s.live
-                    ? "bg-gradient-to-br from-red-600/10 to-orange-600/5 border-red-500/30"
-                    : "bg-[#0a0f1c] border-white/5 hover:border-white/10"
+        </div>
+
+        {activeViewMode === "PLAYER" ? (
+          <>
+            {/* TWO COLUMN WIDE LAYOUT FOR PLAYER */}
+            <div className="flex flex-col lg:flex-row gap-6 mb-12">
+          
+          {/* ── LEFT COLUMN: PLAYER & INFO (65%) ── */}
+          <div className="flex-1 w-full flex flex-col">
+            
+            {/* Player Container */}
+            <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden ring-1 ring-white/[0.08] shadow-2xl shadow-black/80">
+              <div className="absolute top-4 left-4 z-30 inline-flex items-center gap-2 px-2.5 py-1 bg-red-600/90 backdrop-blur-md rounded-md border border-red-500/50">
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                <span className="text-[10px] font-black tracking-widest text-white uppercase">Live Now</span>
+              </div>
+
+              {activeChannel.url.includes(".m3u8") ? (
+                <iframe
+                  ref={iframeRef}
+                  key={activeChannel.id}
+                  srcDoc={`
+                    <!DOCTYPE html>
+                    <html>
+                      <head>
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <style> body { margin: 0; background: #000; overflow: hidden; } video { width: 100vw; height: 100vh; object-fit: contain; } </style>
+                        <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+                      </head>
+                      <body>
+                        <video id="video" controls autoplay playsinline></video>
+                        <script>
+                          var video = document.getElementById('video');
+                          var videoSrc = '${activeChannel.url}';
+                          if (Hls.isSupported()) {
+                            var hls = new Hls({ maxBufferLength: 30 });
+                            hls.loadSource(videoSrc);
+                            hls.attachMedia(video);
+                            hls.on(Hls.Events.MANIFEST_PARSED, function() { video.play(); });
+                          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                            video.src = videoSrc;
+                            video.addEventListener('loadedmetadata', function() { video.play(); });
+                          }
+                        </script>
+                      </body>
+                    </html>
+                  `}
+                  width="100%" height="100%"
+                  frameBorder="0" scrolling="no" allowFullScreen
+                  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                  className="w-full h-full relative bg-black object-contain"
+                />
+              ) : (
+                <iframe
+                  ref={iframeRef}
+                  key={activeChannel.id}
+                  src={activeChannel.url}
+                  width="100%" height="100%"
+                  frameBorder="0" scrolling="no" allowFullScreen
+                  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                  className="w-full h-full relative bg-black object-contain"
+                />
+              )}
+
+              {showOverlay && (
+                <div
+                  className="absolute inset-0 z-20 flex items-center justify-center cursor-pointer bg-black/80 backdrop-blur-sm transition-all"
+                  onClick={() => setShowOverlay(false)}
+                >
+                  <div className="absolute inset-0 opacity-20 pointer-events-none">
+                    <img src={activeChannel.img} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="w-[80px] h-[80px] rounded-full bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center hover:scale-110 transition-transform shadow-[0_0_40px_rgba(239,68,68,0.4)] z-30 relative group">
+                    <Play size={36} className="ml-1.5 fill-white text-white group-hover:drop-shadow-md" />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Utility Bar */}
+            <div className="flex flex-wrap items-center gap-3 mt-4">
+              <button onClick={handleRefresh} className="flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] px-4 py-2.5 rounded-lg text-xs font-bold text-slate-300 transition-colors">
+                <RefreshCw size={14} /> REFRESH
+              </button>
+              <button className="flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] px-4 py-2.5 rounded-lg text-xs font-bold text-slate-300 transition-colors">
+                <VolumeX size={14} /> UNMUTE
+              </button>
+              <button onClick={handleFullscreen} className="flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] px-4 py-2.5 rounded-lg text-xs font-bold text-slate-300 transition-colors">
+                <Maximize size={14} /> VIEW
+              </button>
+              <a href={activeChannel.url} target="_blank" rel="noopener noreferrer" className="ml-auto flex items-center gap-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] px-4 py-2.5 rounded-lg text-xs font-bold text-slate-300 transition-colors">
+                EXTERNAL <ExternalLink size={14} />
+              </a>
+            </div>
+
+            {/* Channel Info & Tags */}
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 py-6 border-b border-white/[0.06] mt-2">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-white mb-3 tracking-tight">{activeChannel.name} — Ads free</h1>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="bg-red-500/10 border border-red-500/20 text-red-500 font-bold text-[10px] px-2.5 py-1 rounded-md tracking-widest uppercase">
+                    {activeChannel.category}
+                  </span>
+                  <span className="bg-white/5 border border-white/10 text-slate-300 font-bold text-[10px] px-2.5 py-1 rounded-md tracking-widest uppercase">
+                    {activeChannel.views}
+                  </span>
+                  {activeChannel.badge && (
+                    <span className="bg-white/5 border border-white/10 text-slate-300 font-bold text-[10px] px-2.5 py-1 rounded-md tracking-widest uppercase">
+                      {activeChannel.badge}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 bg-white/5 p-1.5 rounded-xl border border-white/10">
+                <button onClick={handleShare} className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-white/10 text-[#1877F2] transition"><Share2 size={20} /></button>
+                <div className="w-px h-6 bg-white/10" />
+                <button className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-white/10 text-[#25D366] transition"><MessageSquare size={20} /></button>
+              </div>
+            </div>
+
+            {/* Reactions & Big Share Button */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-6">
+              <div className="flex items-center gap-4">
+                <span className="text-xs font-bold text-slate-400 tracking-widest uppercase">React:</span>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setReactions(r => ({...r, fire: r.fire+1}))} className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-full transition group">
+                    <span className="group-hover:scale-125 transition-transform duration-300">🔥</span> <span className="text-xs font-bold text-slate-300">{reactions.fire}</span>
+                  </button>
+                  <button onClick={() => setReactions(r => ({...r, heart: r.heart+1}))} className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-full transition group">
+                    <span className="group-hover:scale-125 transition-transform duration-300">❤️</span> <span className="text-xs font-bold text-slate-300">{reactions.heart}</span>
+                  </button>
+                  <button onClick={() => setReactions(r => ({...r, clap: r.clap+1}))} className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-full transition group">
+                    <span className="group-hover:scale-125 transition-transform duration-300">👏</span> <span className="text-xs font-bold text-slate-300">{reactions.clap}</span>
+                  </button>
+                </div>
+              </div>
+              <button onClick={handleShare} className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold text-xs tracking-widest px-8 py-3.5 rounded-xl uppercase transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-600/20">
+                <Share2 size={16} /> Share Stream
+              </button>
+            </div>
+          </div>
+
+          {/* ── RIGHT COLUMN: CHAT (35%) ── */}
+          <div className="w-full lg:w-[400px] shrink-0 h-[650px] flex flex-col bg-[#0f111a] border border-white/[0.08] rounded-2xl overflow-hidden shadow-xl">
+            
+            <div className="bg-[#151822] border-b border-white/[0.08] px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <MessageSquare size={16} className="text-white" />
+                <span className="font-bold text-white text-sm tracking-wider uppercase">Discussion Live</span>
+              </div>
+            </div>
+
+            {/* Input Box (Top of chat like Bigyann) */}
+            <div className="p-4 bg-[#0a0c10] border-b border-white/[0.04]">
+               {user ? (
+                <div className="space-y-3">
+                  <textarea
+                    value={chatMsg}
+                    onChange={e => setChatMsg(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Share thoughts..."
+                    maxLength={300}
+                    rows={2}
+                    className="w-full bg-[#151822] border border-white/[0.06] rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-red-500/50 transition-colors resize-none custom-scrollbar"
+                  />
+                  <button
+                    onClick={sendMessage}
+                    disabled={!chatMsg.trim() || sending}
+                    className="w-full bg-[#8c2a2a] hover:bg-[#a63232] disabled:opacity-50 text-white py-2.5 rounded-lg flex items-center justify-center font-bold text-[11px] tracking-widest uppercase transition-colors"
+                  >
+                    Post Comment
+                  </button>
+                </div>
+              ) : (
+                <div className="py-4 text-center">
+                  <p className="text-sm text-slate-400 mb-3">Sign in to join the discussion</p>
+                  <Link href="/login" className="inline-block bg-[#8c2a2a] hover:bg-[#a63232] px-6 py-2 rounded-lg text-[11px] font-bold text-white tracking-widest uppercase transition">
+                    Log In
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Chat Feed */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 custom-scrollbar bg-[#0f111a]">
+              {messages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full opacity-30 gap-2">
+                  <MessageSquare size={32} />
+                  <p className="text-xs font-medium">No discussions yet</p>
+                </div>
+              )}
+              {messages.map((msg) => (
+                <div key={msg.id} className="flex gap-3">
+                  <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${colorFor(msg.uid)} flex items-center justify-center text-xs font-black shrink-0 shadow-lg`}>
+                    {msg.initial}
+                  </div>
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-bold text-white">{msg.name}</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                         {msg.ts ? "Just Now" : ""}
+                      </span>
+                    </div>
+                    <p className="text-[13px] text-slate-300 leading-relaxed font-medium break-words mb-2 pl-1">
+                      {msg.text}
+                    </p>
+                    <div className="flex items-center gap-4 text-slate-500 pl-1">
+                      <button className="text-[11px] font-bold hover:text-white transition flex items-center gap-1"><ThumbsUp size={12}/> Like</button>
+                      <button className="text-[11px] font-bold hover:text-white transition">Reply</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div ref={chatBottomRef} />
+            </div>
+
+          </div>
+        </div>
+
+        {/* ── BOTTOM SECTION: CATEGORIES & THUMBNAILS ── */}
+        <div className="mt-8 mb-20 bg-card border border-border rounded-3xl p-6 md:p-8 shadow-2xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 border-b border-border pb-6">
+            <h2 className="text-2xl font-bold tracking-tight inline-flex items-center gap-3 text-foreground">
+              <Tv size={24} className="text-red-500" /> Channels Catalog
+            </h2>
+
+            {/* Filter Pills */}
+            <div className="flex flex-wrap items-center gap-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-4 py-2 rounded-full text-[11px] font-bold tracking-widest uppercase transition-all ${
+                    activeCategory === cat
+                      ? "bg-red-600 text-white shadow-lg shadow-red-600/20"
+                      : "bg-transparent border border-white/10 text-slate-400 hover:border-white/30 hover:text-white"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+            {filteredChannels.map(ch => (
+              <button
+                key={ch.id}
+                onClick={() => switchChannel(ch)}
+                className={`relative group rounded-2xl overflow-hidden transition-all duration-300 text-left outline-none ${
+                  activeChannel.id === ch.id
+                    ? "ring-2 ring-red-500 ring-offset-2 ring-offset-[#12141c]"
+                    : "hover:-translate-y-1 hover:shadow-xl hover:shadow-black/50"
                 }`}
               >
-                {s.live && (
-                  <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-red-500/20 border border-red-500/30 px-2.5 py-1 rounded-full shadow-inner">
-                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
-                    <span className="text-[9px] font-black text-red-400 tracking-wider">LIVE</span>
-                  </div>
-                )}
-                <div className="text-3xl mb-3 opacity-90">{s.sport}</div>
-                <p className="text-white font-black text-base leading-tight mb-1 truncate">{s.match}</p>
-                <p className="text-xs font-semibold text-indigo-300 mb-3 truncate hover:text-indigo-200 cursor-pointer">{s.channel}</p>
-                <div className="flex items-center justify-between">
-                  <p className={`text-[10px] uppercase tracking-widest font-bold ${s.live ? "text-red-400" : "text-slate-500"}`}>
-                    {s.time}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* MOVIES & CINEMA */}
-        <div className="mb-10">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-black text-white flex items-center gap-3">
-              <Film className="text-pink-400" size={24} /> Cineplex Servers
-            </h2>
-            <div className="bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
-              <span className="text-xs font-bold text-slate-300 tracking-wider">AD-FREE ZONE</span>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {[
-              {
-                href: "https://www.cineby.gd/",
-                title: "CineBy Premium",
-                badge: "FAST • 4K",
-                badgeColor: "bg-gradient-to-r from-pink-600 to-rose-500",
-                desc: "Explore a massive library of Hollywood & Bollywood blockbusters.",
-                img: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1000",
-                border: "hover:border-pink-500/50",
-              },
-              {
-                href: "https://himovies.sx/",
-                title: "HiMovies Stream",
-                badge: "LATEST SHOWS",
-                badgeColor: "bg-gradient-to-r from-violet-600 to-fuchsia-600",
-                desc: "Uninterrupted anime, TV shows, and international cinema hub.",
-                img: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=1000",
-                border: "hover:border-violet-500/50",
-              },
-            ].map((m, i) => (
-              <a
-                key={i}
-                href={m.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`group relative h-48 sm:h-64 rounded-3xl overflow-hidden border border-white/5 ${m.border} transition-all duration-500 block`}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-[#030712] via-[#030712]/60 to-transparent z-10 transition-opacity duration-500 group-hover:opacity-80" />
-                <img
-                  src={m.img}
-                  alt={m.title}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                />
-                
-                <div className="absolute inset-x-0 bottom-0 z-20 p-6 flex items-end justify-between">
-                  <div className="pr-4">
-                     <span className={`${m.badgeColor} text-white tracking-widest text-[9px] font-black px-3 py-1 rounded-full shadow-lg mb-3 inline-block`}>
-                      {m.badge}
-                    </span>
-                    <h3 className="text-2xl sm:text-3xl font-black text-white mb-2 leading-none drop-shadow-xl">{m.title}</h3>
-                    <p className="text-slate-300 text-xs sm:text-sm font-medium drop-shadow-md max-w-sm line-clamp-2 leading-relaxed">
-                      {m.desc}
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center shrink-0 group-hover:bg-white text-white group-hover:text-black transition-all duration-300 transform group-hover:translate-x-1 shadow-2xl">
-                    <ChevronRight size={20} className="font-bold" />
-                  </div>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-
-        {/* SEO SECTION */}
-        <section className="mt-20 border-t border-white/5 pt-12 pb-8">
-          <div className="max-w-4xl opacity-80 backdrop-blur-sm rounded-3xl bg-white/[0.02] border border-white/5 p-8 md:p-10">
-            <h2 className="text-2xl font-black text-white mb-5">
-              Watch Live Cricket, Football & Sports Free in Nepal 🏏⚽
-            </h2>
-            <div className="prose prose-invert prose-sm max-w-none text-slate-400 space-y-4">
-              <p className="leading-relaxed">
-                <strong className="text-cyan-400">Tikajoshi Live Sports</strong> is Nepal's ultimate zero-cost platform to watch <strong className="text-slate-200">live IPL cricket streams, Premier League football, NBA matchups, and F1 races</strong> — absolutely free in brilliant HD.
-              </p>
-              <p className="leading-relaxed">
-                Catch <strong className="text-slate-200">Star Sports 1 live coverage</strong> for IPL 2025 blockbusters, Willow Cricket for ICC international tours, and beIN Sports / HD servers for Champions League nights. No credit cards, no subscriptions, no forced VPNs. Only immediate access.
-              </p>
-              
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 my-6">
-                {[
-                  "Cricbuzz HD Server",
-                  "Star Sports Hindi (IPL)",
-                  "Willow Cricket Network",
-                  "beIN Sports Live",
-                  "Premier League VIP",
-                  "NBA Live Pass HD",
-                  "Sky Sports F1 Broadcast",
-                  "NTV & Kantipur Live",
-                ].map((ch, i) => (
-                  <div key={i} className="flex items-center gap-2.5 text-xs font-bold text-slate-300 bg-black/40 border border-white/5 px-3.5 py-2.5 rounded-xl text-left">
-                    <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                      <Zap size={10} className="text-emerald-400" />
+                <div className="aspect-[16/10] relative w-full bg-[#1c1f2e] border-b border-white/[0.05]">
+                  <img src={ch.img} className="w-full h-full object-cover transition duration-700 group-hover:scale-105" alt="" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b14] via-[#0a0b14]/40 to-transparent opacity-80" />
+                  
+                  {activeChannel.id === ch.id && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+                       <span className="bg-red-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Watching</span>
                     </div>
-                    {ch}
+                  )}
+
+                  <div className="absolute top-3 left-3 z-20 bg-[#0a0b14]/80 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/10">
+                    <span className="text-[9px] font-black tracking-widest uppercase text-slate-200">
+                      {ch.category}
+                    </span>
                   </div>
-                ))}
+                </div>
+                <div className="bg-card p-4 relative z-10 border-t border-border">
+                  <h4 className="text-foreground font-bold text-[13px] tracking-tight mb-1 truncate">{ch.name}</h4>
+                  <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-wider truncate">{ch.desc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+          </>
+        ) : (
+          <div className="flex flex-col gap-8 w-full max-w-[1200px] mx-auto">
+            {/* Global Multi-Sport Aggregator Widget (SofaScore) */}
+            <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-2xl flex flex-col min-h-[900px]">
+              {/* Widget Header with Sub-tabs */}
+              <div className="bg-card z-20 flex flex-col md:flex-row md:items-center px-6 py-4 border-b border-border gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  <h2 className="text-lg font-black tracking-widest text-foreground uppercase">Live Sports Schedule</h2>
+                </div>
+                
+                <div className="ml-auto flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                  {[
+                    { id: "cricket", label: "Cricket", icon: "🏏" },
+                    { id: "football", label: "Football", icon: "⚽" },
+                    { id: "basketball", label: "Basketball", icon: "🏀" },
+                    { id: "tennis", label: "Tennis", icon: "🎾" },
+                    { id: "motorsport", label: "F1/MotoGP", icon: "🏎️" },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => setScheduleSport(s.id)}
+                      className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-tighter transition-all flex items-center gap-2 border ${
+                        scheduleSport === s.id 
+                          ? "bg-foreground text-background border-foreground" 
+                          : "bg-background text-muted-foreground border-border hover:border-foreground/20"
+                      }`}
+                    >
+                      <span>{s.icon}</span> {s.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <p className="leading-relaxed">
-                <strong className="text-slate-200 border-b border-white/20 pb-0.5">IPL 2025 Nepal मा free हेर्ने तरिका:</strong> Select the <strong className="text-white">Cricket</strong> tab above, click on "Star Sports 1 Hindi" or "Cricbuzz HD", and instantly load the live player. We do not require any application installs logic—everything runs purely on the browser.
-              </p>
+              {/* The actual Widget */}
+              <div className="flex-1 p-4 bg-[#0a0c10]">
+                <SofaScoreWidget sport={scheduleSport} />
+              </div>
+
+              <div className="bg-muted/30 px-6 py-3 border-t border-border flex items-center justify-between">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  Real-time data powered by SofaScore API • Auto-Updates 
+                </p>
+                <Link href="/chill-zone" className="text-[10px] font-black text-red-500 uppercase tracking-widest hover:underline">
+                  Refresh View
+                </Link>
+              </div>
+            </div>
+            
+            {/* Professional Bottom Info card */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-card border border-border p-6 rounded-2xl">
+                 <h3 className="text-xs font-black text-foreground uppercase tracking-widest mb-3">Today's Big Games</h3>
+                 <p className="text-xs text-muted-foreground leading-relaxed">
+                   Check the schedule to find channels for IPL, Premier League, and NBA playoffs. Links are updated 30 mins before kick-off.
+                 </p>
+              </div>
+              <div className="bg-card border border-border p-6 rounded-2xl">
+                 <h3 className="text-xs font-black text-foreground uppercase tracking-widest mb-3">Live Streaming tips</h3>
+                 <p className="text-xs text-muted-foreground leading-relaxed">
+                   For best quality, use high-speed internet. If a stream freezes, click the refresh button above the player.
+                 </p>
+              </div>
+              <div className="bg-card border border-border p-6 rounded-2xl">
+                 <h3 className="text-xs font-black text-foreground uppercase tracking-widest mb-3">No Ads Policy</h3>
+                 <p className="text-xs text-muted-foreground leading-relaxed">
+                   We strive to keep our playback environment ad-free. Support us by sharing the website with your friends.
+                 </p>
+              </div>
             </div>
           </div>
-        </section>
+        )}
 
       </main>
     </div>
