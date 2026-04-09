@@ -56,7 +56,29 @@ export default function EngineeringPage() {
       }`;
 
       const rawData = await client.fetch(query);
+      
+      // Also fetch from the simpler studyMaterial schema
+      const genericQuery = `*[_type == "studyMaterial" && category == "engineering"] {
+        title,
+        description,
+        "fileUrl": file.asset->url
+      }`;
+      const genericData = await client.fetch(genericQuery);
+
       const cleanData = rawData.flatMap((doc: any) => doc.subjects || []).filter((sub: any) => sub !== null);
+      
+      // If there's generic data, inject it as a "Shared Resources" block at the end
+      if (genericData.length > 0) {
+        cleanData.push({
+          subjectName: "General/Shared Resources",
+          targets: [{ faculty: facultyVal, semester: "1" }], // Default to semester 1 or others
+          materials: genericData.map((g: any) => ({
+            title: g.title,
+            fileUrl: g.fileUrl,
+          }))
+        });
+      }
+
       setDataList(cleanData);
     } catch (error) { console.error(error); } finally { setLoading(false); }
   };

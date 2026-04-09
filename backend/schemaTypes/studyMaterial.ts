@@ -19,7 +19,9 @@ export default defineType({
         list: [
           { title: 'Loksewa', value: 'loksewa' },
           { title: 'Korean (EPS)', value: 'korean' },
-          { title: 'Class 12', value: 'class12' },
+          { title: 'Class 11/12', value: 'class12' },
+          { title: 'License Exams', value: 'license' },
+          { title: 'Engineering', value: 'engineering' },
           { title: 'Others', value: 'others' },
         ],
       },
