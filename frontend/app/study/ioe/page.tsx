@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 // Force dynamic rendering to prevent production caching issues
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 import Navbar from "@/components/Navbar";
 import { client } from "@/sanity/client";
 // FIX: Added 'Link' to imports
