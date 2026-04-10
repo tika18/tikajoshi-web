@@ -43,7 +43,7 @@ export default function EngineeringPage() {
       if (selection.resource.toLowerCase().includes("syllabus")) typeVal = "syllabus";
 
       const query = `*[_type == "ioeResource" && university == "${uniVal}" && type == "${typeVal}"]{
-        subjects[ count(targets[faculty == "${facultyVal}"]) > 0 ] {
+        subjects[] {
           subjectName,
           targets,
           materials[] {
@@ -198,12 +198,16 @@ export default function EngineeringPage() {
                 ) : dataList.length > 0 ? (
                     <div className="space-y-4">
                         {semesters.map((sem) => {
-                            const semSubjects = dataList.filter((sub: any) => 
-                                sub.targets?.some((t: any) => 
+                            const semSubjects = dataList.filter((sub: any) => {
+                                // If no targets are set, show it to everyone (as general resource)
+                                if (!sub.targets || sub.targets.length === 0) return true;
+                                
+                                // Otherwise, match faculty and semester
+                                return sub.targets.some((t: any) => 
                                     t.semester === sem && 
                                     t.faculty === (selection.stream.toLowerCase().includes("computer") ? "computer" : "civil")
-                                )
-                            );
+                                );
+                            });
                             
                             if (semSubjects.length === 0) return null;
 
