@@ -24,6 +24,7 @@ export default function NEBPage() {
         "fileUrl": file.asset->url
       }`;
       const results = await client.fetch(query);
+      console.log("Sanity NEB Data:", results);
       setDataList(results);
     } catch (error) {
       console.error("Error fetching NEB data:", error);

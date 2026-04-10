@@ -56,22 +56,26 @@ export default function EngineeringPage() {
       }`;
 
       const rawData = await client.fetch(query);
+      console.log("Sanity IOE Data:", rawData);
       
       // Also fetch from the simpler studyMaterial schema
-      const genericQuery = `*[_type == "studyMaterial" && category == "engineering"] {
+      const genericQuery = `*[_type == "studyMaterial" && (category == "engineering" || category == "others")] {
         title,
         description,
         "fileUrl": file.asset->url
       }`;
       const genericData = await client.fetch(genericQuery);
+      console.log("Sanity IOE Data:", rawData);
+      console.log("Sanity Generic Data:", genericData);
 
       const cleanData = rawData.flatMap((doc: any) => doc.subjects || []).filter((sub: any) => sub !== null);
       
-      // If there's generic data, inject it as a "Shared Resources" block at the end
+      // If there's generic data, inject it as a "Shared Resources" block visible in ALL semesters
       if (genericData.length > 0) {
         cleanData.push({
           subjectName: "General/Shared Resources",
-          targets: [{ faculty: facultyVal, semester: "1" }], // Default to semester 1 or others
+          // Map to all possible semesters so it always shows up
+          targets: semesters.map(s => ({ faculty: facultyVal, semester: s })), 
           materials: genericData.map((g: any) => ({
             title: g.title,
             fileUrl: g.fileUrl,

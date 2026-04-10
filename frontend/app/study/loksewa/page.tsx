@@ -32,6 +32,7 @@ export default function LoksewaPage() {
         "fileUrl": file.asset->url
       }`;
       const results = await client.fetch(query);
+      console.log("Sanity Loksewa Data:", results);
       setDataList(results);
     } catch (error) {
       console.error("Error fetching loksewa data:", error);
