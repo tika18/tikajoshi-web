@@ -1,10 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-// Force dynamic rendering to prevent production caching issues
-export const dynamic = "force-dynamic";
 import Navbar from "@/components/Navbar";
 import { client } from "@/sanity/client";
-import { Building2, Award, Briefcase, FileText, Download, Loader2, ChevronRight, Search, Zap, BookOpen, GraduationCap } from "lucide-react";
+import {
+  Building2, Award, Briefcase, FileText,
+  Download, Loader2, Search, Zap, BookOpen, GraduationCap
+} from "lucide-react";
 
 export default function LoksewaPage() {
   const [activeCategory, setActiveCategory] = useState("kharidar");
@@ -13,131 +14,168 @@ export default function LoksewaPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const categories = [
-    { id: "kharidar", title: "Kharidar (खरिदार)", icon: <Briefcase size={18}/>, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-    { id: "nasu", title: "Nayab Subba (ना. सु.)", icon: <Building2 size={18}/>, color: "text-blue-500", bg: "bg-blue-500/10" },
-    { id: "officer", title: "Section Officer (अधिकृत)", icon: <Award size={18}/>, color: "text-purple-500", bg: "bg-purple-500/10" },
-    { id: "banking", title: "Banking (NRB/RBB)", icon: <Building2 size={18}/>, color: "text-yellow-500", bg: "bg-yellow-500/10" },
-    { id: "security", title: "Security (Police/Army)", icon: <Zap size={18}/>, color: "text-orange-500", bg: "bg-orange-500/10" },
+    { id: "kharidar", title: "Kharidar (खरिदार)", icon: <Briefcase size={18}/>, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+    { id: "nasu", title: "Nayab Subba (ना. सु.)", icon: <Building2 size={18}/>, color: "text-blue-400", bg: "bg-blue-500/10" },
+    { id: "officer", title: "Section Officer (अधिकृत)", icon: <Award size={18}/>, color: "text-violet-400", bg: "bg-violet-500/10" },
+    { id: "banking", title: "Banking (NRB/RBB)", icon: <Building2 size={18}/>, color: "text-yellow-400", bg: "bg-yellow-500/10" },
+    { id: "security", title: "Security (Police/Army)", icon: <Zap size={18}/>, color: "text-orange-400", bg: "bg-orange-500/10" },
   ];
 
-  useEffect(() => {
-    fetchData();
-  }, [activeCategory]);
+  useEffect(() => { fetchData(); }, [activeCategory]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch both specific resources and generic studyMaterials for this category
       const query = `*[_type == "loksewaResource" && category == "${activeCategory}"] {
-        title,
-        type,
-        "fileUrl": file.asset->url
+        title, type, "fileUrl": file.asset->url
       }`;
       const results = await client.fetch(query);
-      console.log("Sanity Loksewa Data:", results);
       setDataList(results);
     } catch (error) {
-      console.error("Error fetching loksewa data:", error);
+      console.error("Loksewa fetch error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredData = dataList.filter(item => 
-    item.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredData = dataList.filter(item =>
+    item.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const materialsByType = (type: string) => filteredData.filter(item => item.type === type);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#020817] text-slate-900 dark:text-slate-200 transition-colors duration-300">
+    <div className="min-h-screen bg-[#070c14] text-white">
       <Navbar />
-      
-      {/* Hero Section */}
-      <div className="bg-gradient-to-b from-blue-600 to-indigo-700 pt-32 pb-20 px-6 text-center text-white">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tight">Loksewa Preparation Hub 🇳🇵</h1>
-          <p className="text-blue-100 text-lg mb-10 max-w-2xl mx-auto">Access Syllabus, Notes, and Old Questions for all Loksewa Aayog competitive exams for FREE.</p>
-          
-          <div className="relative max-w-xl mx-auto group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20}/>
-            <input 
-              type="text" 
-              placeholder="Search materials (e.g. GK, IQ, Paper 2)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-2xl py-4 pl-12 pr-4 outline-none border-2 border-transparent focus:border-white/20 shadow-2xl transition-all"
-            />
+
+      {/* HERO */}
+      <div className="relative pt-32 pb-20 px-6 text-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-600/20 via-indigo-600/10 to-transparent pointer-events-none" />
+        <div className="absolute top-10 left-1/4 w-72 h-72 bg-blue-600/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="absolute top-10 right-1/4 w-64 h-64 bg-indigo-600/10 rounded-full blur-[80px] pointer-events-none" />
+
+        <div className="max-w-3xl mx-auto relative z-10">
+          <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-full text-xs font-bold text-blue-300 uppercase tracking-widest mb-6">
+            🇳🇵 Loksewa Aayog
+          </div>
+          <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight">
+            Loksewa{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">
+              Preparation
+            </span>
+          </h1>
+          <p className="text-slate-400 text-base md:text-lg mb-8 max-w-xl mx-auto">
+            Free Syllabus, Notes र Old Questions — Kharidar देखि Officer Level सम्म।
+          </p>
+
+          {/* Search */}
+          <div className="relative max-w-xl mx-auto">
+            <div className="absolute inset-0 bg-blue-500/10 rounded-2xl blur-xl" />
+            <div className="relative flex items-center bg-white/5 border border-white/10 rounded-2xl px-5 py-4 focus-within:border-blue-500/40 transition">
+              <Search size={18} className="text-slate-500 mr-3 shrink-0" />
+              <input
+                type="text"
+                placeholder="Search materials (e.g. GK, IQ, Paper 2)..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="bg-transparent outline-none text-white w-full placeholder:text-slate-600 text-sm"
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto py-12 px-6 flex flex-col lg:flex-row gap-10">
-        
-        {/* Sidebar Navigation */}
-        <aside className="lg:w-72 shrink-0">
-          <div className="sticky top-24 space-y-2">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 px-2">Target Exam</h3>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all ${
-                  activeCategory === cat.id 
-                    ? `bg-white dark:bg-slate-800 shadow-lg ${cat.color} border border-slate-200 dark:border-slate-700` 
-                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
-                }`}
-              >
-                <span className={`p-1.5 rounded-lg ${activeCategory === cat.id ? cat.bg : 'bg-slate-200 dark:bg-slate-800'}`}>
-                  {cat.icon}
-                </span>
-                {cat.title.split(' (')[0]}
-              </button>
-            ))}
+      {/* CONTENT */}
+      <div className="max-w-7xl mx-auto pb-24 px-4 md:px-8 flex flex-col lg:flex-row gap-8">
+
+        {/* SIDEBAR */}
+        <aside className="lg:w-64 shrink-0">
+          <div className="sticky top-24 bg-white/3 border border-white/8 rounded-2xl p-3">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 px-2">
+              Target Exam
+            </p>
+            <div className="space-y-1">
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all text-left ${
+                    activeCategory === cat.id
+                      ? `bg-white/8 border border-white/12 ${cat.color}`
+                      : "text-slate-500 hover:text-slate-300 hover:bg-white/5 border border-transparent"
+                  }`}
+                >
+                  <span className={`p-1.5 rounded-lg ${cat.bg}`}>{cat.icon}</span>
+                  {cat.title.split(" (")[0]}
+                </button>
+              ))}
+            </div>
           </div>
         </aside>
 
-        {/* Main Content Area */}
+        {/* MAIN */}
         <main className="flex-1">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-32 opacity-50">
-              <Loader2 className="animate-spin mb-4" size={40}/>
-              <p className="font-bold tracking-widest uppercase text-xs">Fetching Resources...</p>
+            <div className="flex flex-col items-center justify-center py-32 text-slate-600">
+              <Loader2 className="animate-spin mb-4" size={36} />
+              <p className="text-xs font-bold uppercase tracking-widest">Fetching Resources...</p>
             </div>
           ) : (
-            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              
-              {/* Categorized Material Grid */}
-              <div className="grid md:grid-cols-3 gap-8 text-center sm:text-left">
+            <div className="space-y-8">
+
+              {/* Active Category Header */}
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-xl ${categories.find(c => c.id === activeCategory)?.bg}`}>
+                  {categories.find(c => c.id === activeCategory)?.icon}
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white">
+                    {categories.find(c => c.id === activeCategory)?.title}
+                  </h2>
+                  <p className="text-xs text-slate-500">{filteredData.length} materials found</p>
+                </div>
+              </div>
+
+              {/* Materials Grid */}
+              <div className="grid md:grid-cols-3 gap-5">
                 {[
-                  { id: 'notes', title: 'Preparation Notes', icon: <FileText className="text-emerald-500"/>, bg: 'bg-emerald-500/5' },
-                  { id: 'questions', title: 'Old Question Bank', icon: <GraduationCap className="text-red-500"/>, bg: 'bg-red-500/5' },
-                  { id: 'syllabus', title: 'Exam Syllabus', icon: <BookOpen className="text-blue-500"/>, bg: 'bg-blue-500/5' },
-                ].map((type) => {
+                  { id: "notes",     title: "Preparation Notes", icon: <FileText size={20} className="text-emerald-400" />, color: "border-emerald-500/20 hover:border-emerald-500/40", badge: "bg-emerald-500/10 text-emerald-300" },
+                  { id: "questions", title: "Old Questions",      icon: <GraduationCap size={20} className="text-red-400" />, color: "border-red-500/20 hover:border-red-500/40",     badge: "bg-red-500/10 text-red-300" },
+                  { id: "syllabus",  title: "Exam Syllabus",      icon: <BookOpen size={20} className="text-blue-400" />,    color: "border-blue-500/20 hover:border-blue-500/40",   badge: "bg-blue-500/10 text-blue-300" },
+                ].map(type => {
                   const items = materialsByType(type.id);
                   return (
-                    <div key={type.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all h-full flex flex-col">
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className={`p-3 rounded-2xl ${type.bg}`}>{type.icon}</div>
-                        <h3 className="font-black text-slate-800 dark:text-white uppercase tracking-tight text-sm">{type.title}</h3>
+                    <div key={type.id} className={`bg-white/3 border ${type.color} rounded-2xl p-5 flex flex-col transition-all`}>
+                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/6">
+                        <div className="p-2 bg-white/5 rounded-xl">{type.icon}</div>
+                        <div>
+                          <h3 className="text-sm font-black text-white">{type.title}</h3>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${type.badge}`}>
+                            {items.length} files
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="flex-1 space-y-3">
+                      <div className="flex-1 space-y-2">
                         {items.length > 0 ? (
                           items.map((item, idx) => (
-                            <a 
-                              href={item.fileUrl} 
-                              target="_blank" 
-                              key={idx} 
-                              className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition group"
+                            
+                              key={idx}
+                              href={item.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-between p-3 rounded-xl bg-white/4 hover:bg-white/8 border border-white/5 hover:border-white/10 transition group"
                             >
-                              <span className="text-xs font-bold text-slate-600 dark:text-slate-300 truncate mr-2">{item.title}</span>
-                              <Download size={14} className="text-slate-400 group-hover:text-blue-500 transition-colors shrink-0"/>
+                              <span className="text-xs font-medium text-slate-300 group-hover:text-white transition truncate mr-2">
+                                {item.title}
+                              </span>
+                              <Download size={13} className="text-slate-600 group-hover:text-blue-400 transition shrink-0" />
                             </a>
                           ))
                         ) : (
-                          <div className="py-10 text-center opacity-30 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
-                            <p className="text-[10px] font-black uppercase tracking-widest">No {type.id} found</p>
+                          <div className="flex flex-col items-center justify-center py-8 text-center border border-dashed border-white/8 rounded-xl">
+                            <p className="text-slate-600 text-xs font-medium">No {type.id} yet</p>
+                            <p className="text-slate-700 text-[10px] mt-1">Coming soon...</p>
                           </div>
                         )}
                       </div>
@@ -146,14 +184,26 @@ export default function LoksewaPage() {
                 })}
               </div>
 
-              {/* Summary message if empty */}
-              {filteredData.length === 0 && !loading && (
-                <div className="text-center py-24 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
-                  <div className="text-5xl mb-4">🔍</div>
-                  <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">No materials match your search</h3>
-                  <p className="text-slate-500">Try a different keyword or select another category.</p>
+              {/* Empty State */}
+              {filteredData.length === 0 && searchQuery && (
+                <div className="text-center py-20 bg-white/2 border border-dashed border-white/8 rounded-2xl">
+                  <div className="text-5xl mb-3">🔍</div>
+                  <h3 className="text-lg font-bold text-white mb-2">No results found</h3>
+                  <p className="text-slate-500 text-sm">Try a different keyword or select another category.</p>
                 </div>
               )}
+
+              {/* SEO Content */}
+              <div className="mt-8 p-6 bg-white/2 border border-white/6 rounded-2xl">
+                <h2 className="text-lg font-black text-white mb-3">
+                  Loksewa Aayog Preparation 2081 — Free Materials Nepal 🇳🇵
+                </h2>
+                <p className="text-slate-500 text-sm leading-relaxed">
+                  Tikajoshi मा Loksewa Aayog को सबै exams को लागि free preparation materials पाउनुहुन्छ।
+                  Kharidar, Nayab Subba, Section Officer, NRB Banking र Police/Army exams को
+                  <strong className="text-slate-300"> syllabus, notes र old questions</strong> — सबै free download।
+                </p>
+              </div>
             </div>
           )}
         </main>
