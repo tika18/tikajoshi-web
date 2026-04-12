@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 
-export const revalidate = 30;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Tikajoshi - Nepal's #1 Student & Professional Hub",
