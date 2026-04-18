@@ -12,10 +12,9 @@ type StockSignal = {
   confidence: number;
 };
 
-// Popular NEPSE Stocks for Suggestion
 const nepseStocks = ["NABIL", "NICA", "HIDCL", "SHIVM", "UPPER", "API", "GBIME", "NTC", "CIT", "HDL", "NLIC", "ALICL"];
 
-const StockPredictor = () => {
+const StockPredictor = ({ stocks }: { stocks?: any[] }) => {
   const [symbol, setSymbol] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<StockSignal | null>(null);
@@ -25,37 +24,55 @@ const StockPredictor = () => {
     setLoading(true);
     setResult(null);
 
-    // AI SIMULATION
     setTimeout(() => {
-      // Generate somewhat realistic data
-      const mockPrice = Math.floor(Math.random() * (2500 - 180) + 180);
-      const mockRSI = Math.floor(Math.random() * (85 - 25) + 25); 
+      const cleanSym = symbol.trim().toUpperCase();
+      const liveStock = stocks?.find(s => s.sym.toUpperCase() === cleanSym);
+      const mockPrice = liveStock ? liveStock.ltp : 0;
+      
+      // Deterministic pseudo-random generation based on symbol so it stays stable
+      const hash = cleanSym.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      
+      // Seed RSI based on the actual change if available, else use hash
+      let mockRSI = 50;
+      if (liveStock) {
+        if (liveStock.chg > 0) mockRSI = 50 + (liveStock.chg * 2) + Math.abs(hash % 30);
+        else if (liveStock.chg < 0) mockRSI = 50 - (Math.abs(liveStock.chg) * 2) - Math.abs(hash % 20);
+        else mockRSI = 50 + (hash % 10);
+      } else {
+        mockRSI = 20 + (hash % 60); // 20 to 80
+      }
+      
+      // Clamp RSI
+      mockRSI = Math.max(10, Math.min(90, Math.floor(mockRSI)));
       
       let prediction: StockSignal["prediction"] = "HOLD";
       let sentiment: StockSignal["sentiment"] = "Neutral";
       
-      // Technical Logic
-      if (mockRSI < 32) {
+      if (mockRSI <= 30) {
         prediction = "STRONG BUY";
         sentiment = "Bullish";
-      } else if (mockRSI > 68) {
+      } else if (mockRSI >= 70) {
         prediction = "SELL";
         sentiment = "Bearish";
-      } else if (mockRSI >= 32 && mockRSI <= 45) {
+      } else if (mockRSI > 50) {
         prediction = "BUY";
         sentiment = "Bullish";
+      } else if (mockRSI < 50) {
+        prediction = "HOLD";
+        sentiment = "Neutral";
       }
 
       setResult({
-        symbol: symbol.toUpperCase(),
-        price: mockPrice,
+        symbol: cleanSym,
+        price: liveStock ? liveStock.ltp : Math.floor((hash * 13) % 2000 + 200),
         rsi: mockRSI,
         sentiment: sentiment,
         prediction: prediction,
-        confidence: Math.floor(Math.random() * (96 - 72) + 72), 
+        // Confidence based on how extreme the RSI is
+        confidence: Math.min(99, 65 + Math.abs(mockRSI - 50)),
       });
       setLoading(false);
-    }, 2000);
+    }, 1200);
   };
 
   return (
