@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "IPL Live Stream Free Nepal 2026 - Star Sports, JioStar HD | Tikajoshi",
+  title: "IPL Live HD Stream Free Nepal 2026 - Star Sports, JioStar HD,willow Hd,Cricbuzz Hd | Tikajoshi",
   description:
     "Watch IPL 2026 live FREE in Nepal! Star Sports 1 live stream, JioStar HD, Cricbuzz HD, Premier League, NBA, Formula 1 — 15+ channels. No VPN needed. Click & Watch!",
   keywords: [
     "IPL live stream free Nepal",
+    "rcb vs dc live",
     "star sports 1 live Nepal",
     "JioStar live stream Nepal",
     "IPL 2026 free watch Nepal",

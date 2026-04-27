@@ -9,8 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@portabletext/react": "*",
     "@radix-ui/react-slot": "*",
+    "@sanity/client": "^7.21.0",
     "@tailwindcss/typography": "^0.5.19",
     "@types/nodemailer": "^8.0.0",
     "browser-image-compression": "^2.0.2",
