@@ -9,6 +9,7 @@ export default defineType({
       name: 'title',
       title: 'Title',
       type: 'string',
+      validation: (Rule) => Rule.required(), // Title navai post hudaina
     }),
     defineField({
       name: 'slug',
@@ -18,6 +19,13 @@ export default defineType({
         source: 'title',
         maxLength: 96,
       },
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'excerpt', // SEO ra Slider ma dekhauna yo ekdum kaam lagcha
+      title: 'Excerpt / Short Description',
+      type: 'text',
+      rows: 3,
     }),
     defineField({
       name: 'author',
@@ -30,7 +38,7 @@ export default defineType({
       title: 'Main image',
       type: 'image',
       options: {
-        hotspot: true,
+        hotspot: true, // Yesle image crop garna sajilo banaucha
       },
     }),
     defineField({

@@ -42,15 +42,15 @@ export async function GET(req: Request) {
   try {
     const apiKey = process.env.GEMINI_API_KEY!.trim();
 
-    // Find model
+    // Find working Gemini model
     const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
     const listData = await listRes.json();
     const model = (listData.models || []).find((m: any) =>
       m.supportedGenerationMethods?.includes('generateContent') && m.name.includes('gemini')
     );
-    if (!model) throw new Error('No Gemini model');
+    if (!model) throw new Error('No Gemini model found');
 
-    // Already posted
+    // Already posted slugs
     const posted = await sanityClient.fetch(`*[_type == "vehicle"]{ "slug": slug.current }`);
     const postedSlugs = new Set(posted.map((v: any) => v.slug));
     const available = VEHICLES.filter(v => {
@@ -58,51 +58,95 @@ export async function GET(req: Request) {
       return !postedSlugs.has(slug);
     });
 
-    if (available.length === 0) return NextResponse.json({ success: true, message: 'All posted!' });
+    if (available.length === 0) {
+      return NextResponse.json({ success: true, message: 'All vehicles already posted!' });
+    }
 
     const toPost = available.sort(() => Math.random() - 0.5).slice(0, count);
     const results = [];
 
     for (const vehicle of toPost) {
       try {
-        const prompt = `Write a Nepal vehicle review for ${vehicle.name}. Return ONLY valid JSON:
-{"price":"285000","mileage":"45 kmpl","engine":"160cc Single Cylinder","features":["Feature 1","Feature 2","Feature 3","Feature 4","Feature 5"],"seoTitle":"${vehicle.name} Price in Nepal 2025","seoDescription":"${vehicle.name} price, specs and review in Nepal 2025.","image_search_keyword":"${vehicle.brand} ${vehicle.type} motorcycle","description":[{"style":"h2","text":"Overview"},{"style":"normal","text":"The ${vehicle.name} is one of the most popular vehicles in Nepal market offering great value."},{"style":"h2","text":"Performance"},{"style":"normal","text":"Detailed performance analysis for Nepal roads and conditions."},{"style":"h2","text":"Price in Nepal"},{"style":"normal","text":"Price and value for money analysis in Nepal market."},{"style":"h2","text":"Verdict"},{"style":"normal","text":"Final verdict for Nepali buyers."}]}`;
+        // Simple hardcoded prompt — Gemini ले sure JSON return गरोस्
+        const prompt = `You are a Nepal vehicle expert. Return ONLY this JSON with no extra text, no markdown:
+{
+  "price": "estimated NPR price number only like 285000",
+  "mileage": "like 45 kmpl or 120 km range",
+  "engine": "like 160cc or 4.2 kWh",
+  "features": ["feature1","feature2","feature3","feature4","feature5"],
+  "seoTitle": "${vehicle.name} Price in Nepal 2025",
+  "seoDescription": "Buy ${vehicle.name} in Nepal. Check latest price, specs and review.",
+  "image_search_keyword": "${vehicle.brand} motorcycle Nepal",
+  "description": [
+    {"style":"h2","text":"Overview"},
+    {"style":"normal","text":"The ${vehicle.name} is a popular ${vehicle.type} in Nepal offered by ${vehicle.brand} with excellent performance and value."},
+    {"style":"h2","text":"Engine and Performance"},
+    {"style":"normal","text":"Powered by a capable engine that delivers smooth performance on Nepal roads."},
+    {"style":"h2","text":"Price in Nepal"},
+    {"style":"normal","text":"The ${vehicle.name} is competitively priced in the Nepal market offering great value for money."},
+    {"style":"h2","text":"Should You Buy It?"},
+    {"style":"normal","text":"An excellent choice for Nepali buyers looking for reliability and performance."}
+  ]
+}
+
+Fill in realistic values for ${vehicle.name} by ${vehicle.brand}.`;
 
         const geminiRes = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/${model.name}:generateContent?key=${apiKey}`,
-          { method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.3 },
+            }),
+          }
         );
+
+        if (!geminiRes.ok) throw new Error(`Gemini HTTP ${geminiRes.status}`);
         const geminiData = await geminiRes.json();
-        let text = geminiData.candidates[0].content.parts[0].text;
-        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const data = JSON.parse(text);
+
+        // Safe extraction
+        const candidates = geminiData?.candidates;
+        if (!candidates?.length) throw new Error('No candidates from Gemini');
+        const rawText = candidates[0]?.content?.parts?.[0]?.text;
+        if (!rawText) throw new Error('Empty response from Gemini');
+
+        const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const data = JSON.parse(cleaned);
 
         // Pexels image
         let imageAssetId = null;
         if (process.env.PEXELS_API_KEY) {
-          const pRes = await fetch(
-            `https://api.pexels.com/v1/search?query=${encodeURIComponent(data.image_search_keyword)}&per_page=1`,
-            { headers: { Authorization: process.env.PEXELS_API_KEY.trim() } }
-          );
-          const pData = await pRes.json();
-          if (pData.photos?.[0]) {
-            const imgRes = await fetch(pData.photos[0].src.large);
-            if (imgRes.ok) {
-              const buffer = Buffer.from(await imgRes.arrayBuffer());
-              const asset = await sanityClient.assets.upload('image', buffer, {
-                filename: vehicle.brand.toLowerCase() + '-' + Date.now() + '.jpg',
-                contentType: 'image/jpeg',
-              });
-              imageAssetId = asset._id;
+          try {
+            const pRes = await fetch(
+              `https://api.pexels.com/v1/search?query=${encodeURIComponent(data.image_search_keyword)}&per_page=1`,
+              { headers: { Authorization: process.env.PEXELS_API_KEY.trim() } }
+            );
+            const pData = await pRes.json();
+            if (pData.photos?.[0]?.src?.large) {
+              const imgRes = await fetch(pData.photos[0].src.large);
+              if (imgRes.ok) {
+                const buffer = Buffer.from(await imgRes.arrayBuffer());
+                const asset = await sanityClient.assets.upload('image', buffer, {
+                  filename: `${vehicle.brand}-${Date.now()}.jpg`.toLowerCase().replace(/\s/g, '-'),
+                  contentType: 'image/jpeg',
+                });
+                imageAssetId = asset._id;
+              }
             }
+          } catch (imgErr) {
+            console.error('Image upload failed:', imgErr);
           }
         }
 
+        // Build Sanity doc
         const slug = vehicle.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        const body = data.description.map((b: any) => ({
-          _type: 'block', _key: Math.random().toString(36).slice(2),
-          style: b.style, markDefs: [],
+        const body = (data.description || []).map((b: any) => ({
+          _type: 'block',
+          _key: Math.random().toString(36).slice(2),
+          style: b.style || 'normal',
+          markDefs: [],
           children: [{ _type: 'span', _key: Math.random().toString(36).slice(2), marks: [], text: b.text }],
         }));
 
@@ -112,26 +156,33 @@ export async function GET(req: Request) {
           slug: { _type: 'slug', current: slug },
           type: vehicle.type,
           brand: vehicle.brand,
-          price: data.price,
-          mileage: data.mileage,
-          engine: data.engine,
-          features: data.features,
+          price: String(data.price || ''),
+          mileage: data.mileage || '',
+          engine: data.engine || '',
+          features: data.features || [],
           description: body,
-          seoTitle: data.seoTitle,
-          seoDescription: data.seoDescription,
+          seoTitle: data.seoTitle || vehicle.name,
+          seoDescription: data.seoDescription || '',
         };
+
         if (imageAssetId) {
           doc.mainImage = { _type: 'image', asset: { _type: 'reference', _ref: imageAssetId } };
         }
 
         await sanityClient.create(doc);
         results.push({ success: true, name: vehicle.name });
+
       } catch (e: any) {
         results.push({ success: false, name: vehicle.name, error: e.message });
       }
     }
 
-    return NextResponse.json({ success: true, posted: results.filter(r => r.success).length, results });
+    return NextResponse.json({
+      success: true,
+      posted: results.filter(r => r.success).length,
+      results,
+    });
+
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e.message }, { status: 500 });
   }
