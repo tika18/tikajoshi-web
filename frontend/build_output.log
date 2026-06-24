@@ -1,0 +1,62 @@
+
+> frontend@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.3
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/34) ...
+   Generating static pages (8/34) 
+   Generating static pages (16/34) 
+   Generating static pages (25/34) 
+ ✓ Generating static pages (34/34)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    5.41 kB         280 kB
+├ ○ /_not-found                          879 B          88.5 kB
+├ ƒ /api/chill/create                    0 B                0 B
+├ ○ /api/forex                           0 B                0 B
+├ ○ /chill-zone                          7.72 kB         224 kB
+├ ○ /chill-zone/create                   7.78 kB         261 kB
+├ ○ /contact                             4.92 kB         218 kB
+├ ○ /login                               4.94 kB         176 kB
+├ ○ /market                              6.4 kB          219 kB
+├ ○ /market/forex                        5.07 kB         218 kB
+├ ○ /news                                4.52 kB         217 kB
+├ ○ /quiz                                5.24 kB         255 kB
+├ ○ /robots.txt                          0 B                0 B
+├ ○ /sitemap.xml                         0 B                0 B
+├ ○ /study                               4.5 kB          217 kB
+├ ○ /study/ioe                           7.17 kB         257 kB
+├ ○ /study/loksewa                       4.46 kB         217 kB
+├ ○ /tools                               6.42 kB         219 kB
+├ ○ /tools/compressor                    24.6 kB         237 kB
+├ ○ /tools/date-converter                7.46 kB         220 kB
+├ ○ /tools/emi-calculator                4.62 kB         217 kB
+├ ○ /tools/img-converter                 4.35 kB         217 kB
+├ ○ /tools/img-resize                    5.44 kB         218 kB
+├ ○ /tools/img-to-pdf                    135 kB          348 kB
+├ ○ /tools/merge-pdf                     207 kB          420 kB
+├ ○ /tools/passport-photo                4.44 kB         217 kB
+├ ○ /tools/pdf-to-img                    96 kB           316 kB
+├ ○ /tools/qr-generator                  4.23 kB         217 kB
+├ ○ /tools/tu-result                     5.1 kB          218 kB
+├ ○ /tools/voice-to-text                 99.5 kB         319 kB
+├ ○ /vehicles                            968 B           157 kB
+└ ƒ /vehicles/[slug]                     1.06 kB         150 kB
++ First Load JS shared by all            87.6 kB
+  ├ chunks/7023-c02d470efc1f538b.js      31.6 kB
+  ├ chunks/fd9d1056-2b92f57fa81c101f.js  53.6 kB
+  └ other shared chunks (total)          2.38 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
