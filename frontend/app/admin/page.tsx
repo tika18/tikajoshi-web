@@ -29,11 +29,26 @@ export default function AdminDashboard() {
   const [slug, setSlug] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
   const [keywords, setKeywords] = useState("");
-  const [targetPage, setTargetPage] = useState("study");
+  const [targetPage, setTargetPage] = useState("market");
   const [featuredImage, setFeaturedImage] = useState("");
+  const [category, setCategory] = useState<"NEPSE News" | "Technical Analysis" | "IPO Updates" | "Vehicles & Tech">("NEPSE News");
+  const [seoTitle, setSeoTitle] = useState("");
+  const [secImage1, setSecImage1] = useState("");
+  const [secImage2, setSecImage2] = useState("");
+  const [secImage3, setSecImage3] = useState("");
+  const [secImage4, setSecImage4] = useState("");
   
   const [publishing, setPublishing] = useState(false);
   const [publishStatus, setPublishStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+
+  // Sync category with targetPage
+  useEffect(() => {
+    if (category === "Vehicles & Tech") {
+      setTargetPage("study");
+    } else {
+      setTargetPage("market");
+    }
+  }, [category]);
 
   // Auto-generate slug from title
   useEffect(() => {
@@ -97,6 +112,10 @@ export default function AdminDashboard() {
     setPublishing(true);
     setPublishStatus(null);
 
+    const secondaryImages = [secImage1, secImage2, secImage3, secImage4]
+      .map((img) => img.trim())
+      .filter(Boolean);
+
     try {
       const res = await fetch("/api/blog/publish", {
         method: "POST",
@@ -108,7 +127,10 @@ export default function AdminDashboard() {
           slug,
           metaDescription,
           keywords,
-          targetPage
+          targetPage,
+          category,
+          secondaryImages,
+          seoTitle: seoTitle || title
         })
       });
       
@@ -125,6 +147,12 @@ export default function AdminDashboard() {
         setMetaDescription("");
         setKeywords("");
         setFeaturedImage("");
+        setCategory("NEPSE News");
+        setSeoTitle("");
+        setSecImage1("");
+        setSecImage2("");
+        setSecImage3("");
+        setSecImage4("");
       } else {
         throw new Error(data.error || "Failed to publish post.");
       }
@@ -311,6 +339,21 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
+              {/* Category Dropdown */}
+              <div>
+                <label className="block text-xs text-slate-400 font-bold uppercase mb-2">Category *</label>
+                <select
+                  value={category}
+                  onChange={(e: any) => setCategory(e.target.value)}
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-violet-500 outline-none appearance-none cursor-pointer transition"
+                >
+                  <option value="NEPSE News">NEPSE News</option>
+                  <option value="Technical Analysis">Technical Analysis</option>
+                  <option value="IPO Updates">IPO Updates</option>
+                  <option value="Vehicles & Tech">Vehicles & Tech</option>
+                </select>
+              </div>
+
               {/* Featured Image */}
               <div>
                 <label className="block text-xs text-slate-400 font-bold uppercase mb-2">Featured Image URL / Keyword</label>
@@ -325,22 +368,80 @@ export default function AdminDashboard() {
                   <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                 </div>
               </div>
+            </div>
 
-              {/* Placement Select */}
+            {/* Secondary Images Gallery */}
+            <div className="bg-white/[0.015] border border-white/5 rounded-2xl p-4 space-y-4">
+              <label className="block text-xs text-slate-400 font-bold uppercase">Secondary Images Gallery (Up to 4 URL Links)</label>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Secondary Image 1 Link"
+                    value={secImage1}
+                    onChange={(e) => setSecImage1(e.target.value)}
+                    className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs focus:border-violet-500 outline-none transition"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Secondary Image 2 Link"
+                    value={secImage2}
+                    onChange={(e) => setSecImage2(e.target.value)}
+                    className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs focus:border-violet-500 outline-none transition"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Secondary Image 3 Link"
+                    value={secImage3}
+                    onChange={(e) => setSecImage3(e.target.value)}
+                    className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs focus:border-violet-500 outline-none transition"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Secondary Image 4 Link"
+                    value={secImage4}
+                    onChange={(e) => setSecImage4(e.target.value)}
+                    className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs focus:border-violet-500 outline-none transition"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* SEO Title */}
               <div>
-                <label className="block text-xs text-slate-400 font-bold uppercase mb-2">Target Page Placement</label>
+                <label className="block text-xs text-slate-400 font-bold uppercase mb-2">SEO Title Override</label>
+                <input
+                  type="text"
+                  placeholder="Custom SEO Title (defaults to Title if empty)"
+                  value={seoTitle}
+                  onChange={(e) => setSeoTitle(e.target.value)}
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-violet-500 outline-none transition"
+                />
+              </div>
+
+              {/* Placement (Auto Sync Info) */}
+              <div>
+                <label className="block text-xs text-slate-400 font-bold uppercase mb-2">Target Page Placement (Auto-Synced)</label>
                 <div className="relative">
-                  <select
-                    value={targetPage}
-                    onChange={(e) => setTargetPage(e.target.value)}
-                    className="w-full bg-slate-900 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm focus:border-violet-500 outline-none appearance-none cursor-pointer transition"
-                  >
-                    <option value="market">Share Market Page (/market)</option>
-                    <option value="vehicle">Vehicles Page (/vehicles)</option>
-                    <option value="tools">Tools Directory (/tools)</option>
-                    <option value="study">Study Resources (/study)</option>
-                  </select>
-                  <Compass size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <input
+                    type="text"
+                    disabled
+                    readOnly
+                    value={targetPage === "market" ? "Share Market Page (/market)" : "Study Resources (/study)"}
+                    className="w-full bg-slate-950 border border-white/5 text-slate-500 rounded-xl pl-10 pr-4 py-3 text-sm outline-none"
+                  />
+                  <Compass size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" />
                 </div>
               </div>
             </div>
@@ -363,13 +464,13 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="block text-xs text-slate-400 font-bold uppercase">Meta Description</label>
-                  <span className={`text-[10px] font-bold ${metaDescription.length > 160 ? "text-red-400" : "text-slate-500"}`}>
-                    {metaDescription.length} / 160
+                  <span className={`text-[10px] font-bold ${metaDescription.length > 160 || metaDescription.length < 150 ? "text-amber-400" : "text-emerald-400"}`}>
+                    {metaDescription.length} / 150-160
                   </span>
                 </div>
                 <textarea
                   rows={3}
-                  placeholder="Summarize the article in less than 160 characters for search engines."
+                  placeholder="Summarize the article in 150-160 characters for search engines."
                   value={metaDescription}
                   onChange={(e) => setMetaDescription(e.target.value)}
                   className={`w-full bg-slate-900 border rounded-xl px-4 py-3 text-sm outline-none transition resize-none ${

@@ -1,21 +1,24 @@
 import { client } from "@/sanity/client";
 import Navbar from "@/components/Navbar";
 import HeroSearch from "@/components/HeroSearch";
+import NepseTicker from "@/components/NepseTicker";
 import Link from "next/link";
 import Image from "next/image";
+import fs from "fs";
+import path from "path";
 import {
-  Zap, GraduationCap, Building2, FileText,
-  MonitorPlay, BookOpen, Mic, ArrowRight,
-  TrendingUp, Shield, Globe, Sparkles
+  Zap, GraduationCap, FileText,
+  BookOpen, ArrowRight,
+  TrendingUp, Sparkles, Calendar, Tag, ArrowUpRight
 } from "lucide-react";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Tikajoshi - Nepal's #1 Student & Professional Hub",
+  title: "Tikajoshi - Nepal's Premium Share Market, Tools & Blog Hub",
   description:
-    "Free IOE notes, Loksewa prep, NEPSE live, TU results, IPL live stream, vehicle reviews — सबै एकै ठाउँमा।",
+    "Real-time NEPSE updates, live stock market news, upcoming IPO trackers, professional web tools, and educational libraries — all in one place.",
   alternates: { canonical: "https://www.tikajoshi.com.np" },
 };
 
@@ -25,14 +28,133 @@ async function getFeaturedVehicles() {
     "imageUrl": mainImage.asset->url,
     price, type, brand
   }`;
-  return await client.fetch(query, {}, { next: { revalidate: 30 } });
+  try {
+    return await client.fetch(query, {}, { next: { revalidate: 30 } });
+  } catch (e) {
+    console.error("Sanity vehicles fetch error:", e);
+    return [];
+  }
 }
+
+const MOCK_BLOGS = [
+  {
+    _id: "mock1",
+    title: "NEPSE Index Surges as Commercial Banks Decrease Interest Rates",
+    excerpt: "The Nepal Stock Exchange witnessed a strong bullish momentum today, gainers leading the chart as commercial banks announced lower lending rates for the upcoming quarter.",
+    category: "NEPSE News",
+    publishedAt: new Date().toISOString(),
+    slug: "nepse-surges-interest-rates-decrease",
+    imageUrl: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=1200&auto=format&fit=crop"
+  },
+  {
+    _id: "mock2",
+    title: "Technical Analysis: NEPSE Chart Patterns & Support Levels",
+    excerpt: "A deep dive into the daily chart of NEPSE, analyzing the double bottom breakout, moving averages, and critical support and resistance levels for retail investors.",
+    category: "Technical Analysis",
+    publishedAt: new Date().toISOString(),
+    slug: "technical-analysis-nepse-chart-patterns",
+    imageUrl: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?q=80&w=1200&auto=format&fit=crop"
+  },
+  {
+    _id: "mock3",
+    title: "Upcoming Hydropower & Insurance IPOs to Watch in 2082",
+    excerpt: "With multiple insurance and hydropower companies getting approval from SEBON, we review the financials of upcoming IPOs and which ones are worth your investment.",
+    category: "IPO Updates",
+    publishedAt: new Date().toISOString(),
+    slug: "upcoming-hydropower-ipos-watch",
+    imageUrl: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=1200&auto=format&fit=crop"
+  }
+];
+
+async function getFeaturedBlogs() {
+  let posts: any[] = [];
+  
+  // 1. Try Sanity CMS
+  if (process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) {
+    try {
+      const query = `*[_type == "post"] | order(publishedAt desc)[0..5] {
+        _id, title, excerpt, category, publishedAt,
+        "slug": slug.current,
+        "imageUrl": mainImage.asset->url
+      }`;
+      posts = await client.fetch(query);
+    } catch (e) {
+      console.error("Sanity error on homepage:", e);
+    }
+  }
+
+  // 2. Try Local Fallback JSON
+  try {
+    const localDbPath = path.join(process.cwd(), "lib", "db", "blogs.json");
+    if (fs.existsSync(localDbPath)) {
+      const content = fs.readFileSync(localDbPath, "utf-8");
+      const localPosts = JSON.parse(content);
+      if (Array.isArray(localPosts)) {
+        localPosts.forEach((lp: any) => {
+          if (!posts.some(p => p.slug === lp.slug)) {
+            posts.push({
+              _id: lp.id,
+              title: lp.title,
+              excerpt: lp.excerpt || lp.metaDescription,
+              category: lp.category || "NEPSE News",
+              publishedAt: lp.publishedAt,
+              slug: lp.slug,
+              imageUrl: lp.imageUrl
+            });
+          }
+        });
+      }
+    }
+  } catch (e) {
+    console.error("Local JSON error on homepage:", e);
+  }
+
+  // Sort by date desc
+  posts.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  
+  return posts.length > 0 ? posts.slice(0, 3) : MOCK_BLOGS;
+}
+
+const UPCOMING_IPOS = [
+  { company: "Madhya Bhotekoshi Jalbidhyut", sector: "Hydropower", units: "1,500,000", price: "Rs. 100", openDate: "2026-07-10", closeDate: "2026-07-14", status: "Upcoming" },
+  { company: "Ghorahi Cement Industry", sector: "Manufacturing", units: "2,000,000", price: "Rs. 435", openDate: "2026-07-05", closeDate: "2026-07-09", status: "Open" },
+  { company: "Dish Media Network Ltd.", sector: "Others", units: "1,250,000", price: "Rs. 100", openDate: "2026-06-20", closeDate: "2026-06-24", status: "Closed" },
+  { company: "Citizen Life Insurance", sector: "Insurance", units: "5,000,000", price: "Rs. 244", openDate: "2026-07-15", closeDate: "2026-07-19", status: "Upcoming" },
+];
+
+const CORE_HUBS = [
+  {
+    href: "/market",
+    title: "NEPSE Market Portal",
+    desc: "Real-time stock indices, live price list, advanced technical charts, WACC & SIP calculators.",
+    icon: <TrendingUp size={24} />,
+    color: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/40 hover:shadow-emerald-500/5",
+    tag: "LIVE DATA"
+  },
+  {
+    href: "/tools",
+    title: "Smart Web Toolkit",
+    desc: "Nepali date converter, passport photo cropper, image compressors, document converters, and bill calculators.",
+    icon: <Zap size={24} />,
+    color: "text-violet-400 border-violet-500/20 bg-violet-500/5 hover:border-violet-500/40 hover:shadow-violet-500/5",
+    tag: "15+ TOOLS"
+  },
+  {
+    href: "/blog",
+    title: "Finance & Tech Blog",
+    desc: "Daily stock market news, technical analysis updates, IPO notifications, and technology guides.",
+    icon: <FileText size={24} />,
+    color: "text-cyan-400 border-cyan-500/20 bg-cyan-500/5 hover:border-cyan-500/40 hover:shadow-cyan-500/5",
+    tag: "SEO INSIGHTS"
+  }
+];
 
 export default async function Home() {
   const vehicles = await getFeaturedVehicles();
+  const blogs = await getFeaturedBlogs();
 
   return (
-    <div className="min-h-screen text-white overflow-x-hidden">
+    <div className="min-h-screen text-white overflow-x-hidden bg-[#020409]">
       <Navbar />
 
       {/* ── HERO ── */}
@@ -40,157 +162,170 @@ export default async function Home() {
         <HeroSearch />
       </div>
 
-      {/* ── STATS BAR ── */}
-      <div className="relative z-10 border-y border-white/6 bg-white/[0.02] backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-center gap-8 md:gap-16 flex-wrap">
-            {[
-              { label: "Free Tools", value: "15+", icon: "⚡" },
-              { label: "Live Channels", value: "15+", icon: "📺" },
-              { label: "Students Helped", value: "10K+", icon: "🎓" },
-              { label: "Always Free", value: "100%", icon: "🔓" },
-            ].map((s, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <span className="text-xl">{s.icon}</span>
-                <div>
-                  <p className="text-lg font-black text-white leading-none">{s.value}</p>
-                  <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{s.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* ── LIVE NEPSE TAPE/TICKER ── */}
+      <NepseTicker />
 
-      {/* ── TOOLS SECTION ── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 py-24">
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs font-bold text-violet-300 uppercase tracking-widest mb-6">
-            <Sparkles size={12} /> Smart Tools
-          </div>
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-4">
-            Everything you need.{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-cyan-400">
-              All free.
-            </span>
+      {/* ── CORE HUBS GRID ── */}
+      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 pt-16">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl font-black uppercase tracking-wider text-slate-400 flex items-center justify-center gap-2">
+            <Sparkles size={16} className="text-violet-400" /> Core Portals & Directories
           </h2>
-          <p className="text-slate-400 max-w-xl mx-auto text-base">
-            Professional-grade tools built for Nepali students and professionals.
-          </p>
         </div>
-
-        {/* Tools Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            {
-              href: "/tools/voice-to-text",
-              icon: <Mic size={22} />,
-              title: "Voice AI",
-              desc: "Speak to transcribe notes, check results naturally.",
-              color: "violet",
-              glow: "group-hover:shadow-violet-500/20",
-              border: "group-hover:border-violet-500/40",
-              iconBg: "bg-violet-500/10 text-violet-400",
-              badge: "AI",
-            },
-            {
-              href: "/tools/img-to-pdf",
-              icon: <FileText size={22} />,
-              title: "PDF Studio",
-              desc: "Merge, convert and compress documents instantly.",
-              color: "blue",
-              glow: "group-hover:shadow-blue-500/20",
-              border: "group-hover:border-blue-500/40",
-              iconBg: "bg-blue-500/10 text-blue-400",
-              badge: null,
-            },
-            {
-              href: "/tools/compressor",
-              icon: <Zap size={22} />,
-              title: "Compressor",
-              desc: "Reduce image size without losing quality.",
-              color: "yellow",
-              glow: "group-hover:shadow-yellow-500/20",
-              border: "group-hover:border-yellow-500/40",
-              iconBg: "bg-yellow-500/10 text-yellow-400",
-              badge: null,
-            },
-            {
-              href: "/chill-zone",
-              icon: <MonitorPlay size={22} />,
-              title: "Live Sports",
-              desc: "IPL, EPL, NBA, F1 — 15+ HD channels free.",
-              color: "red",
-              glow: "group-hover:shadow-red-500/20",
-              border: "group-hover:border-red-500/40",
-              iconBg: "bg-red-500/10 text-red-400",
-              badge: "LIVE",
-            },
-          ].map((tool, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {CORE_HUBS.map((hub, i) => (
             <Link
               key={i}
-              href={tool.href}
-              className={`group relative bg-white/[0.03] border border-white/8 ${tool.border} rounded-2xl p-6 hover:-translate-y-1 hover:shadow-2xl ${tool.glow} transition-all duration-300 overflow-hidden`}
+              href={hub.href}
+              className={`group relative border rounded-2xl p-6 transition-all duration-300 ${hub.color}`}
             >
-              {/* Glow bg */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute top-4 right-4 text-[9px] font-black px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-300">
+                {hub.tag}
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                {hub.icon}
+              </div>
+              <h3 className="text-lg font-black mb-2 flex items-center gap-1">
+                {hub.title} <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                {hub.desc}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </section>
 
-              <div className="relative z-10">
-                {tool.badge && (
-                  <span className="absolute top-0 right-0 text-[9px] font-black px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/20">
-                    {tool.badge}
-                  </span>
-                )}
-                <div className={`w-12 h-12 rounded-xl ${tool.iconBg} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                  {tool.icon}
-                </div>
-                <h3 className="text-base font-black text-white mb-2">{tool.title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed group-hover:text-slate-400 transition-colors">
-                  {tool.desc}
+      {/* ── FEATURED BLOGS & NEWS ── */}
+      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 py-20">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs font-bold text-violet-300 uppercase tracking-widest mb-4">
+              📰 Market & Tech Insights
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight">
+              Featured{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-cyan-400">
+                Articles
+              </span>
+            </h2>
+            <p className="text-slate-400 mt-2">Latest stock analysis, IPO guides, and technology reviews.</p>
+          </div>
+          <Link href="/blog"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-bold transition group">
+            All Articles <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {blogs.map((blog) => (
+            <Link
+              key={blog._id}
+              href={blog.category === "Vehicles & Tech" ? `/blog/${blog.slug}` : `/market/${blog.slug}`}
+              className="group bg-white/[0.02] border border-white/8 hover:border-violet-500/30 rounded-2xl overflow-hidden hover:-translate-y-1 hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="relative aspect-[16/10] bg-white/5 overflow-hidden">
+                <Image
+                  src={blog.imageUrl || "/og-image.jpg"}
+                  alt={blog.title}
+                  fill
+                  className="object-cover opacity-60 group-hover:opacity-85 group-hover:scale-105 transition-all duration-500"
+                />
+                <span className="absolute top-4 left-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider text-white bg-black/60 border border-white/10 backdrop-blur-md">
+                  <Tag size={9} className="text-violet-400" />
+                  {blog.category}
+                </span>
+              </div>
+              <div className="p-5">
+                <p className="text-[10px] text-slate-500 font-bold mb-2">
+                  {new Date(blog.publishedAt).toLocaleDateString()}
                 </p>
-                <div className="flex items-center gap-1 mt-4 text-xs font-bold text-slate-600 group-hover:text-white transition-colors">
-                  Open Tool <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                </div>
+                <h3 className="text-base font-bold text-white mb-2 group-hover:text-violet-400 transition-colors line-clamp-2 leading-snug">
+                  {blog.title}
+                </h3>
+                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                  {blog.excerpt}
+                </p>
+                <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
+                  Read Article →
+                </span>
               </div>
             </Link>
           ))}
         </div>
+      </section>
 
-        {/* All tools link */}
-        <div className="text-center mt-8">
-          <Link href="/tools" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-white transition font-medium">
-            View all tools <ArrowRight size={14} />
-          </Link>
+      {/* ── UPCOMING IPOS WIDGET ── */}
+      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 pb-20">
+        <div className="border border-white/8 bg-white/[0.015] rounded-3xl p-6 sm:p-8">
+          <div className="flex items-center gap-2 mb-6">
+            <Calendar className="text-emerald-400" size={20} />
+            <h3 className="text-xl sm:text-2xl font-black text-white">Upcoming & Active IPO Tracker</h3>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-white/10 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                  <th className="py-3 px-4">Company</th>
+                  <th className="py-3 px-4">Sector</th>
+                  <th className="py-3 px-4">Total Units</th>
+                  <th className="py-3 px-4">Issue Price</th>
+                  <th className="py-3 px-4">Dates</th>
+                  <th className="py-3 px-4 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {UPCOMING_IPOS.map((ipo, idx) => (
+                  <tr key={idx} className="hover:bg-white/[0.01] transition-colors">
+                    <td className="py-4 px-4 font-bold text-white text-xs sm:text-sm">{ipo.company}</td>
+                    <td className="py-4 px-4 text-slate-400 text-xs">{ipo.sector}</td>
+                    <td className="py-4 px-4 text-slate-300 text-xs">{ipo.units}</td>
+                    <td className="py-4 px-4 font-mono text-emerald-400 text-xs">{ipo.price}</td>
+                    <td className="py-4 px-4 text-xs text-slate-400 leading-tight">
+                      <div>Open: {ipo.openDate}</div>
+                      <div>Close: {ipo.closeDate}</div>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        ipo.status === "Open" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                        ipo.status === "Upcoming" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
+                        "bg-red-500/10 text-red-400 border border-red-500/20"
+                      }`}>
+                        {ipo.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
       {/* ── FEATURED VEHICLES ── */}
-      <section className="relative z-10 border-y border-white/6 bg-white/[0.015] py-24">
-        <div className="max-w-6xl mx-auto px-4 md:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-            <div>
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-bold text-blue-300 uppercase tracking-widest mb-4">
-                🏍️ Vehicles Nepal
+      {vehicles.length > 0 && (
+        <section className="relative z-10 border-t border-white/6 bg-white/[0.015] py-24">
+          <div className="max-w-6xl mx-auto px-4 md:px-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+              <div>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-bold text-blue-300 uppercase tracking-widest mb-4">
+                  🏍️ Vehicles Nepal
+                </div>
+                <h2 className="text-4xl md:text-5xl font-black tracking-tight">
+                  Latest{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-400">
+                    Reviews
+                  </span>
+                </h2>
+                <p className="text-slate-400 mt-2">Bike, scooter र car को latest price र specs Nepal मा।</p>
               </div>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tight">
-                Latest{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-400">
-                  Reviews
-                </span>
-              </h2>
-              <p className="text-slate-400 mt-2">Bike, scooter र car को latest price र specs Nepal मा।</p>
+              <Link href="/vehicles"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/8 border border-white/12 hover:bg-white/12 text-white text-sm font-bold transition shrink-0 group">
+                View All <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+              </Link>
             </div>
-            <Link href="/vehicles"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/8 border border-white/12 hover:bg-white/12 text-white text-sm font-bold transition shrink-0 group">
-              View All <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
 
-          {vehicles.length === 0 ? (
-            <div className="text-center py-16 bg-white/2 border border-dashed border-white/8 rounded-2xl">
-              <p className="text-slate-500">🏍️ Vehicles loading...</p>
-            </div>
-          ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {vehicles.map((vehicle: any) => (
                 <Link
@@ -231,12 +366,12 @@ export default async function Home() {
                 </Link>
               ))}
             </div>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
       {/* ── STUDY + RESULTS ── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 py-24">
+      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 py-24 border-t border-white/6">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-300 uppercase tracking-widest mb-6">
             📚 Study Hub
@@ -300,73 +435,6 @@ export default async function Home() {
               </div>
             </div>
           </Link>
-        </div>
-      </section>
-
-      {/* ── MARKET SECTION ── */}
-      <section className="relative z-10 border-t border-white/6 bg-white/[0.015]">
-        <div className="max-w-6xl mx-auto px-4 md:px-8 py-24">
-          <div className="grid md:grid-cols-3 gap-4">
-            <Link href="/market"
-              className="group md:col-span-2 relative bg-white/[0.03] border border-white/8 hover:border-cyan-500/30 p-8 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-cyan-500/5 transition-all duration-300">
-              <div className="absolute top-0 right-0 w-72 h-72 bg-cyan-500/5 rounded-full blur-[100px] group-hover:bg-cyan-500/10 transition duration-700" />
-              <div className="relative z-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-xs font-bold text-cyan-300 uppercase tracking-widest mb-6">
-                  📈 Live Market
-                </div>
-                <h3 className="text-3xl font-black text-white mb-3">NEPSE Live</h3>
-                <p className="text-slate-400 text-sm mb-6">Real-time NEPSE chart, share prices, forex rates र stock market analysis।</p>
-                <div className="flex items-center gap-2 text-sm font-bold text-cyan-400">
-                  View Market <ArrowRight size={14} />
-                </div>
-              </div>
-            </Link>
-
-            <Link href="/news"
-              className="group relative bg-white/[0.03] border border-white/8 hover:border-violet-500/30 p-8 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-violet-500/5 transition-all duration-300">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-violet-500/5 rounded-full blur-[80px] group-hover:bg-violet-500/10 transition duration-700" />
-              <div className="relative z-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs font-bold text-violet-300 uppercase tracking-widest mb-6">
-                  📰 Latest
-                </div>
-                <h3 className="text-3xl font-black text-white mb-3">News Hub</h3>
-                <p className="text-slate-400 text-sm mb-6">Nepal र world को latest news updates।</p>
-                <div className="flex items-center gap-2 text-sm font-bold text-violet-400">
-                  Read News <ArrowRight size={14} />
-                </div>
-              </div>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA SECTION ── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 py-24">
-        <div className="relative bg-gradient-to-br from-violet-600/20 via-indigo-600/10 to-cyan-600/10 border border-white/10 rounded-3xl p-10 md:p-16 text-center overflow-hidden">
-          <div className="pointer-events-none absolute -top-24 -right-14 h-48 w-48 rounded-2xl border border-violet-300/20 bg-violet-500/10 shadow-2xl shadow-violet-500/15 backdrop-blur-sm [transform:perspective(900px)_rotateY(-28deg)_rotateX(18deg)]" />
-          <div className="pointer-events-none absolute -bottom-20 -left-8 h-44 w-44 rounded-2xl border border-cyan-300/20 bg-cyan-500/10 shadow-2xl shadow-cyan-500/15 backdrop-blur-sm [transform:perspective(900px)_rotateY(28deg)_rotateX(-18deg)]" />
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.03%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]" />
-          <div className="relative z-10">
-            <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-4">
-              Start for{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-cyan-400">
-                free.
-              </span>
-            </h2>
-            <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
-              Join thousands of Nepali students using Tikajoshi every day. No signup required.
-            </p>
-            <div className="flex items-center justify-center gap-4 flex-wrap">
-              <Link href="/study"
-                className="px-8 py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-90 text-white rounded-full font-bold text-sm transition shadow-lg shadow-violet-500/20">
-                Explore Study Hub →
-              </Link>
-              <Link href="/chill-zone"
-                className="px-8 py-3.5 bg-white/8 hover:bg-white/12 border border-white/12 text-white rounded-full font-bold text-sm transition">
-                Watch Live Sports 🏏
-              </Link>
-            </div>
-          </div>
         </div>
       </section>
 

@@ -38,10 +38,10 @@ const tagColors: Record<string, string> = {
 };
 
 const WORDS = [
-  { text: "Smart Minds",  colors: ["#a78bfa", "#818cf8", "#67e8f9"] },
-  { text: "Live Sports",  colors: ["#f87171", "#fb923c", "#fbbf24"] },
-  { text: "Study Hub",    colors: ["#34d399", "#22d3ee", "#60a5fa"] },
-  { text: "Future Nepal", colors: ["#c084fc", "#a78bfa", "#f472b6"] },
+  { text: "Share Market Hub", colors: ["#10b981", "#06b6d4", "#3b82f6"] },
+  { text: "Smart Web Tools",  colors: ["#a78bfa", "#818cf8", "#67e8f9"] },
+  { text: "SEO Blog & News",  colors: ["#fb923c", "#fbbf24", "#f472b6"] },
+  { text: "NEPSE Live Portal",colors: ["#34d399", "#22d3ee", "#60a5fa"] },
 ];
 
 const TYPE_SPEED   = 70;
@@ -215,7 +215,7 @@ export default function HeroSearch() {
           <div className="mb-5 sm:mb-7">
             <h1 className="font-black tracking-tighter leading-[1.04]">
               <span className="block text-[clamp(2rem,5.2vw,4rem)] text-white/90 mb-1">
-                Everything for
+                Nepal's Premium
               </span>
               <span
                 className="block leading-none"

@@ -12,7 +12,7 @@ import {
   TrendingUp, TrendingDown, ExternalLink, Maximize2, X,
   Star, RefreshCw, Calculator, DollarSign, BarChart2,
   ArrowUpRight, ArrowDownRight, Info, Zap, Globe,
-  Loader2, WifiOff, Clock, Calendar, FileText as BlogIcon
+  Loader2, WifiOff, Clock, Calendar, FileText as BlogIcon, Tag
 } from "lucide-react";
 import NepaliDate from "nepali-date-converter";
 
@@ -508,6 +508,7 @@ function SectorChart({ sectors, loading }: { sectors: SectorRow[]; loading: bool
 ═══════════════════════════════════════════════════ */
 export default function MarketPage() {
   const [fullScreen, setFullScreen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"market" | "news">("market");
   const [chartSymbol, setChartSymbol] = useState("NEPSE");
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<NepseData | null>(null);
@@ -667,6 +668,26 @@ export default function MarketPage() {
           </div>
         </div>
 
+        {/* Tab Selector */}
+        <div className="flex gap-2 bg-white/[0.03] border border-white/10 p-1 rounded-xl mb-8 max-w-sm">
+          <button
+            onClick={() => setActiveTab("market")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition ${
+              activeTab === "market" ? "bg-emerald-600 text-white" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <BarChart2 size={14} /> Live Dashboard
+          </button>
+          <button
+            onClick={() => setActiveTab("news")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition ${
+              activeTab === "news" ? "bg-emerald-600 text-white" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <BlogIcon size={14} /> News & Blogs
+          </button>
+        </div>
+
         {/* ── MARKET STATS STRIP ── */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
           {loading ? (
@@ -695,7 +716,9 @@ export default function MarketPage() {
           )}
         </div>
 
-        {/* ── LIVE MARKET TAPE ── */}
+        {activeTab === "market" ? (
+          <>
+            {/* ── LIVE MARKET TAPE ── */}
         {data && (data.topGainers.length > 0 || data.topLosers.length > 0) && (
           <div className="mb-10 rounded-2xl border border-slate-700/50 bg-[#0d1520] p-4 sm:p-5">
             <div className="flex items-center gap-2 mb-3">
@@ -929,7 +952,7 @@ export default function MarketPage() {
               {blogs.map((blog) => (
                 <Link
                   key={blog._id}
-                  href={`/blog/${blog.slug}`}
+                  href={`/market/${blog.slug}`}
                   className="group bg-[#0d1520] border border-slate-800 hover:border-emerald-500/30 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
                 >
                   <div className="relative h-44 bg-slate-900">
@@ -1028,7 +1051,65 @@ export default function MarketPage() {
               </p>
             </div>
           </div>
-        </section>
+          </>
+        ) : (
+          <div className="space-y-8 animate-fade-up">
+            <div className="bg-[#0d1520] border border-slate-700/50 rounded-3xl p-6 sm:p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <BlogIcon size={24} className="text-emerald-400" />
+                <h2 className="text-xl sm:text-2xl font-black text-white">NEPSE News & Technical Analysis</h2>
+              </div>
+              <p className="text-slate-400 text-xs sm:text-sm mb-8 leading-relaxed">
+                Stay updated with daily analysis, expert market views, technical trend reports, and upcoming IPO notices for the Nepal Share Market.
+              </p>
+
+              {blogs.length === 0 ? (
+                <div className="text-center py-16 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl">
+                  <p className="text-slate-500 text-sm">No market analysis posts published yet. Use the admin panel to publish NEPSE News!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {blogs.map((blog) => (
+                    <Link
+                      key={blog._id}
+                      href={`/market/${blog.slug}`}
+                      className="group bg-[#020817] border border-slate-800 hover:border-emerald-500/30 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/[0.02]"
+                    >
+                      <div className="relative aspect-[16/10] bg-slate-900 overflow-hidden">
+                        {blog.imageUrl && (
+                          <Image
+                            src={blog.imageUrl}
+                            alt={blog.title}
+                            fill
+                            className="object-cover opacity-60 group-hover:opacity-85 group-hover:scale-105 transition-all duration-500"
+                          />
+                        )}
+                        <span className="absolute top-4 left-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider text-white bg-black/60 border border-white/10 backdrop-blur-md">
+                          <Tag size={9} className="text-emerald-400" />
+                          {blog.category || "Market"}
+                        </span>
+                      </div>
+                      <div className="p-5">
+                        <p className="text-[10px] text-slate-500 font-bold mb-2">
+                          {new Date(blog.publishedAt).toLocaleDateString()}
+                        </p>
+                        <h3 className="text-sm font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
+                          {blog.title}
+                        </h3>
+                        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                          {blog.excerpt}
+                        </p>
+                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
+                          Read Article →
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ── SEO CONTENT BLOCK ── */}
         <section className="p-6 sm:p-8 bg-white/[0.02] border border-white/[0.06] rounded-2xl">

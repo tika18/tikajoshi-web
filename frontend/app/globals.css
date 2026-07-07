@@ -325,6 +325,21 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 2px;
 }
 
+/* ============ MARQUEE ============ */
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  display: inline-block;
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
 @layer base {
   * { @apply border-border; }
   body { @apply bg-background text-foreground; }

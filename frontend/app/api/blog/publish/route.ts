@@ -112,7 +112,18 @@ function sanitizeSlug(title: string): string {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { title, richTextBody, featuredImage, slug, metaDescription, keywords, targetPage } = body;
+    const {
+      title,
+      richTextBody,
+      featuredImage,
+      slug,
+      metaDescription,
+      keywords,
+      targetPage,
+      category,
+      secondaryImages,
+      seoTitle
+    } = body;
 
     if (!title || !richTextBody) {
       return NextResponse.json({ error: "Title and Body are required" }, { status: 400 });
@@ -139,6 +150,11 @@ export async function POST(req: Request) {
       body: richTextBody,
       bodyHtml: linkedHtmlBody,
       imageUrl: featuredImage || "/og-image.jpg",
+      secondaryImages: Array.isArray(secondaryImages) ? secondaryImages.filter(Boolean) : [],
+      category: category || "NEPSE News",
+      likes: 0,
+      comments: [],
+      seoTitle: seoTitle || title,
       metaDescription: metaDescription || richTextBody.substring(0, 150) + "...",
       keywords: keywords ? keywords.split(",").map((k: string) => k.trim()) : [],
       targetPage: targetPage || "study",
