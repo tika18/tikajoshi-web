@@ -1,3 +1,5 @@
+"use client";
+
 // app/admin/page.tsx
 // Advanced admin dashboard — auto-post triggers + manual SEO publisher
 
