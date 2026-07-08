@@ -596,8 +596,12 @@ export default function MarketPage() {
     }
   };
 
+  // Filter blogs for the news tab
+  const marketCategories = ["NEPSE News", "Technical Analysis", "IPO Updates"];
+  const filteredBlogs = blogs.filter((b: any) => marketCategories.includes(b.category || "NEPSE News"));
+
   // Build market stats display items
-  const statsItems = data
+  const statsItems: Array<{ label: string; value: string | number; change: string; up: boolean | null }> = data
     ? [
         {
           label: "NEPSE Index",
@@ -617,9 +621,9 @@ export default function MarketPage() {
           change: `${data.marketStats.floatIndex.change} (${data.marketStats.floatIndex.pct}%)`,
           up: data.marketStats.floatIndex.up,
         },
-        { label: "Turnover",     value: `Rs ${data.marketStats.turnover}`, change: "Today", up: null as boolean | null },
-        { label: "Traded Shares", value: data.marketStats.totalTrades,     change: "Shares", up: null as boolean | null },
-        { label: "Companies",    value: data.marketStats.totalCompanies,   change: "Traded", up: null as boolean | null },
+        { label: "Turnover",     value: `Rs ${data.marketStats.turnover}`, change: "Today", up: null },
+        { label: "Traded Shares", value: data.marketStats.totalTrades,     change: "Shares", up: null },
+        { label: "Companies",    value: data.marketStats.totalCompanies,   change: "Traded", up: null },
       ]
     : [];
 
@@ -1071,8 +1075,9 @@ export default function MarketPage() {
               </p>
             </div>
           </div>
-          </>
-        ) : (
+        </section>
+      </>
+    ) : (
           <div className="space-y-8 animate-fade-up">
             <div className="bg-[#0d1520] border border-slate-700/50 rounded-3xl p-6 sm:p-8">
               <div className="flex items-center gap-3 mb-6">
@@ -1083,68 +1088,59 @@ export default function MarketPage() {
                 Stay updated with daily analysis, expert market views, technical trend reports, and upcoming IPO notices for the Nepal Share Market.
               </p>
 
-              {(() => {
-                const marketCategories = ["NEPSE News", "Technical Analysis", "IPO Updates"];
-                const filteredBlogs = blogs.filter((b: any) => marketCategories.includes(b.category || "NEPSE News"));
-
-                if (filteredBlogs.length === 0) {
-                  return (
-                    <div className="text-center py-16 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl">
-                      <p className="text-slate-500 text-sm">No market analysis posts published yet. Use the admin panel to publish NEPSE News!</p>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredBlogs.map((blog) => {
-                      const bodyText = typeof blog.body === "string" ? blog.body : Array.isArray(blog.body) ? JSON.stringify(blog.body) : "";
-                      const readingTime = calculateReadingTime(bodyText);
-                      const displayCategory = blog.category || "NEPSE News";
-                      return (
-                        <Link
-                          key={blog._id}
-                          href={`/market/${blog.slug}`}
-                          className="group bg-[#020817] border border-slate-800 hover:border-emerald-500/30 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/[0.02]"
-                        >
-                          <div className="relative aspect-[16/10] bg-slate-900 overflow-hidden">
-                            {blog.imageUrl && (
-                              <Image
-                                src={blog.imageUrl}
-                                alt={blog.title}
-                                fill
-                                className="object-cover opacity-60 group-hover:opacity-85 group-hover:scale-105 transition-all duration-500"
-                              />
-                            )}
-                            <span className={`absolute top-4 left-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider backdrop-blur-md ${getCategoryBadgeClass(displayCategory)}`}>
-                              <Tag size={9} />
-                              {displayCategory}
+              {filteredBlogs.length === 0 ? (
+                <div className="text-center py-16 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl">
+                  <p className="text-slate-500 text-sm">No market analysis posts published yet. Use the admin panel to publish NEPSE News!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredBlogs.map((blog) => {
+                    const bodyText = typeof blog.body === "string" ? blog.body : Array.isArray(blog.body) ? JSON.stringify(blog.body) : "";
+                    const readingTime = calculateReadingTime(bodyText);
+                    const displayCategory = blog.category || "NEPSE News";
+                    return (
+                      <Link
+                        key={blog._id}
+                        href={`/market/${blog.slug}`}
+                        className="group bg-[#020817] border border-slate-800 hover:border-emerald-500/30 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/[0.02]"
+                      >
+                        <div className="relative aspect-[16/10] bg-slate-900 overflow-hidden">
+                          {blog.imageUrl && (
+                            <Image
+                              src={blog.imageUrl}
+                              alt={blog.title}
+                              fill
+                              className="object-cover opacity-60 group-hover:opacity-85 group-hover:scale-105 transition-all duration-500"
+                            />
+                          )}
+                          <span className={`absolute top-4 left-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider backdrop-blur-md ${getCategoryBadgeClass(displayCategory)}`}>
+                            <Tag size={9} />
+                            {displayCategory}
+                          </span>
+                        </div>
+                        <div className="p-5">
+                          <div className="flex items-center justify-between gap-2 mb-2 text-[10px] text-slate-500 font-bold">
+                            <span>{new Date(blog.publishedAt).toLocaleDateString()}</span>
+                            <span className="flex items-center gap-1">
+                              <Clock size={10} className="text-emerald-400" />
+                              {readingTime}
                             </span>
                           </div>
-                          <div className="p-5">
-                            <div className="flex items-center justify-between gap-2 mb-2 text-[10px] text-slate-500 font-bold">
-                              <span>{new Date(blog.publishedAt).toLocaleDateString()}</span>
-                              <span className="flex items-center gap-1">
-                                <Clock size={10} className="text-emerald-400" />
-                                {readingTime}
-                              </span>
-                            </div>
-                            <h3 className="text-sm font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
-                              {blog.title}
-                            </h3>
-                            <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                              {blog.excerpt || blog.metaDescription}
-                            </p>
-                            <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
-                              Read Article →
-                            </span>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
+                          <h3 className="text-sm font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
+                            {blog.title}
+                          </h3>
+                          <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                            {blog.excerpt || blog.metaDescription}
+                          </p>
+                          <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
+                            Read Article →
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}

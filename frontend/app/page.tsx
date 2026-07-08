@@ -43,7 +43,6 @@ function calculateReadingTime(text: string): string {
   const time = Math.max(1, Math.ceil(words / 200));
   return `${time} min read`;
 }
-
 const MOCK_BLOGS = [
   {
     _id: "mock1",
