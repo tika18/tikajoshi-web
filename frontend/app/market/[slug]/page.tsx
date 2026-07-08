@@ -8,6 +8,7 @@ import path from "path";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Calendar, User, ArrowLeft, Image as ImageIcon } from "lucide-react";
+import { PortableText } from "@portabletext/react";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ interface LocalPost {
   title: string;
   slug: string;
   excerpt: string;
-  body: string;
+  body: string | any[]; // supports string or PortableText block array
   bodyHtml?: string;
   imageUrl: string;
   secondaryImages?: string[];
@@ -37,8 +38,8 @@ async function getPostData(slug: string): Promise<LocalPost | null> {
       const query = `*[_type == "post" && slug.current == $slug][0]{
         _id, title, excerpt, publishedAt, body, category,
         "imageUrl": mainImage.asset->url,
-        "secondaryImages": secondaryImages[] { asset->url },
-        likes, comments, seoTitle, seoDescription, keywords
+        "secondaryImages": secondaryImages[].asset->url,
+        likes, comments, seoTitle, metaDescription, keywords
       }`;
       const post = await client.fetch(query, { slug });
       if (post) {
@@ -47,14 +48,14 @@ async function getPostData(slug: string): Promise<LocalPost | null> {
           title: post.title,
           slug: slug,
           excerpt: post.excerpt || "",
-          body: typeof post.body === "string" ? post.body : "",
+          body: post.body || "",
           imageUrl: post.imageUrl || "/og-image.jpg",
-          secondaryImages: Array.isArray(post.secondaryImages) ? post.secondaryImages.map((img: any) => img.asset?.url).filter(Boolean) : [],
+          secondaryImages: Array.isArray(post.secondaryImages) ? post.secondaryImages.filter(Boolean) : [],
           category: post.category || "NEPSE News",
           likes: post.likes || 0,
           comments: post.comments || [],
           seoTitle: post.seoTitle || post.title,
-          metaDescription: post.seoDescription || post.excerpt || "",
+          metaDescription: post.metaDescription || post.excerpt || "",
           keywords: typeof post.keywords === "string" ? post.keywords.split(",").map((k: string) => k.trim()) : [],
           publishedAt: post.publishedAt || new Date().toISOString(),
         };
@@ -182,7 +183,9 @@ export default async function MarketBlogDetail({ params }: { params: { slug: str
                 prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
                 prose-p:mb-6 prose-strong:text-white prose-a:text-cyan-400"
             >
-              {post.bodyHtml ? (
+              {Array.isArray(post.body) ? (
+                <PortableText value={post.body} />
+              ) : post.bodyHtml ? (
                 <div dangerouslySetInnerHTML={{ __html: post.bodyHtml }} />
               ) : (
                 <div className="whitespace-pre-line">{post.body}</div>

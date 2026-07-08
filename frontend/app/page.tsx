@@ -8,7 +8,7 @@ import fs from "fs";
 import path from "path";
 import {
   Zap, GraduationCap, FileText,
-  BookOpen, ArrowRight,
+  BookOpen, ArrowRight, Clock,
   TrendingUp, Sparkles, Calendar, Tag, ArrowUpRight
 } from "lucide-react";
 import type { Metadata } from "next";
@@ -36,6 +36,14 @@ async function getFeaturedVehicles() {
   }
 }
 
+// Calculate reading time helper
+function calculateReadingTime(text: string): string {
+  if (!text) return "2 min read";
+  const words = text.trim().split(/\s+/).length;
+  const time = Math.max(1, Math.ceil(words / 200));
+  return `${time} min read`;
+}
+
 const MOCK_BLOGS = [
   {
     _id: "mock1",
@@ -44,7 +52,8 @@ const MOCK_BLOGS = [
     category: "NEPSE News",
     publishedAt: new Date().toISOString(),
     slug: "nepse-surges-interest-rates-decrease",
-    imageUrl: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=1200&auto=format&fit=crop"
+    imageUrl: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=1200&auto=format&fit=crop",
+    readingTime: "3 min read"
   },
   {
     _id: "mock2",
@@ -53,7 +62,8 @@ const MOCK_BLOGS = [
     category: "Technical Analysis",
     publishedAt: new Date().toISOString(),
     slug: "technical-analysis-nepse-chart-patterns",
-    imageUrl: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?q=80&w=1200&auto=format&fit=crop"
+    imageUrl: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?q=80&w=1200&auto=format&fit=crop",
+    readingTime: "5 min read"
   },
   {
     _id: "mock3",
@@ -62,7 +72,8 @@ const MOCK_BLOGS = [
     category: "IPO Updates",
     publishedAt: new Date().toISOString(),
     slug: "upcoming-hydropower-ipos-watch",
-    imageUrl: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=1200&auto=format&fit=crop"
+    imageUrl: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=1200&auto=format&fit=crop",
+    readingTime: "4 min read"
   }
 ];
 
@@ -72,12 +83,36 @@ async function getFeaturedBlogs() {
   // 1. Try Sanity CMS
   if (process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) {
     try {
-      const query = `*[_type == "post"] | order(publishedAt desc)[0..5] {
-        _id, title, excerpt, category, publishedAt,
+      const query = `*[_type == "post" && targetPage == "market"] | order(publishedAt desc)[0..2] {
+        _id, title, excerpt, metaDescription, category, publishedAt, body,
         "slug": slug.current,
         "imageUrl": mainImage.asset->url
       }`;
-      posts = await client.fetch(query);
+      const data = await client.fetch(query);
+      if (Array.isArray(data)) {
+        posts = data.map(p => {
+          // Extract text from portableText body to estimate reading time
+          let bodyText = "";
+          if (Array.isArray(p.body)) {
+            bodyText = p.body
+              .filter((block: any) => block._type === "block" && block.children)
+              .map((block: any) => block.children.map((c: any) => c.text).join(" "))
+              .join(" ");
+          } else if (typeof p.body === "string") {
+            bodyText = p.body;
+          }
+          return {
+            _id: p._id,
+            title: p.title,
+            excerpt: p.metaDescription || p.excerpt || "",
+            category: p.category || "NEPSE News",
+            publishedAt: p.publishedAt,
+            slug: p.slug,
+            imageUrl: p.imageUrl,
+            readingTime: calculateReadingTime(bodyText)
+          };
+        });
+      }
     } catch (e) {
       console.error("Sanity error on homepage:", e);
     }
@@ -91,15 +126,16 @@ async function getFeaturedBlogs() {
       const localPosts = JSON.parse(content);
       if (Array.isArray(localPosts)) {
         localPosts.forEach((lp: any) => {
-          if (!posts.some(p => p.slug === lp.slug)) {
+          if (lp.targetPage === "market" && !posts.some(p => p.slug === lp.slug)) {
             posts.push({
               _id: lp.id,
               title: lp.title,
-              excerpt: lp.excerpt || lp.metaDescription,
+              excerpt: lp.metaDescription || lp.excerpt || "",
               category: lp.category || "NEPSE News",
               publishedAt: lp.publishedAt,
               slug: lp.slug,
-              imageUrl: lp.imageUrl
+              imageUrl: lp.imageUrl,
+              readingTime: calculateReadingTime(lp.body)
             });
           }
         });
@@ -149,6 +185,20 @@ const CORE_HUBS = [
   }
 ];
 
+// Helper to get Category Badge styles
+function getCategoryBadgeClass(category: string): string {
+  switch (category) {
+    case "Technical Analysis":
+      return "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20";
+    case "IPO Updates":
+      return "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20";
+    case "Vehicles & Tech":
+      return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
+    default: // NEPSE News
+      return "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+  }
+}
+
 export default async function Home() {
   const vehicles = await getFeaturedVehicles();
   const blogs = await getFeaturedBlogs();
@@ -165,102 +215,17 @@ export default async function Home() {
       {/* ── LIVE NEPSE TAPE/TICKER ── */}
       <NepseTicker />
 
-      {/* ── CORE HUBS GRID ── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 pt-16">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl font-black uppercase tracking-wider text-slate-400 flex items-center justify-center gap-2">
-            <Sparkles size={16} className="text-violet-400" /> Core Portals & Directories
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {CORE_HUBS.map((hub, i) => (
-            <Link
-              key={i}
-              href={hub.href}
-              className={`group relative border rounded-2xl p-6 transition-all duration-300 ${hub.color}`}
-            >
-              <div className="absolute top-4 right-4 text-[9px] font-black px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-300">
-                {hub.tag}
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-                {hub.icon}
-              </div>
-              <h3 className="text-lg font-black mb-2 flex items-center gap-1">
-                {hub.title} <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-              </h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                {hub.desc}
-              </p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ── FEATURED BLOGS & NEWS ── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 py-20">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs font-bold text-violet-300 uppercase tracking-widest mb-4">
-              📰 Market & Tech Insights
+      {/* ── UPCOMING IPOS WIDGET (AT TOP OF BODY) ── */}
+      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 pt-10">
+        <div className="border border-white/8 bg-white/[0.015] rounded-3xl p-6 sm:p-8 backdrop-blur-md shadow-2xl">
+          <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <Calendar className="text-emerald-400" size={20} />
+              <h3 className="text-xl sm:text-2xl font-black text-white">Upcoming & Active IPO Tracker</h3>
             </div>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight">
-              Featured{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-cyan-400">
-                Articles
-              </span>
-            </h2>
-            <p className="text-slate-400 mt-2">Latest stock analysis, IPO guides, and technology reviews.</p>
-          </div>
-          <Link href="/blog"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-bold transition group">
-            All Articles <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {blogs.map((blog) => (
-            <Link
-              key={blog._id}
-              href={blog.category === "Vehicles & Tech" ? `/blog/${blog.slug}` : `/market/${blog.slug}`}
-              className="group bg-white/[0.02] border border-white/8 hover:border-violet-500/30 rounded-2xl overflow-hidden hover:-translate-y-1 hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="relative aspect-[16/10] bg-white/5 overflow-hidden">
-                <Image
-                  src={blog.imageUrl || "/og-image.jpg"}
-                  alt={blog.title}
-                  fill
-                  className="object-cover opacity-60 group-hover:opacity-85 group-hover:scale-105 transition-all duration-500"
-                />
-                <span className="absolute top-4 left-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider text-white bg-black/60 border border-white/10 backdrop-blur-md">
-                  <Tag size={9} className="text-violet-400" />
-                  {blog.category}
-                </span>
-              </div>
-              <div className="p-5">
-                <p className="text-[10px] text-slate-500 font-bold mb-2">
-                  {new Date(blog.publishedAt).toLocaleDateString()}
-                </p>
-                <h3 className="text-base font-bold text-white mb-2 group-hover:text-violet-400 transition-colors line-clamp-2 leading-snug">
-                  {blog.title}
-                </h3>
-                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                  {blog.excerpt}
-                </p>
-                <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
-                  Read Article →
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ── UPCOMING IPOS WIDGET ── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 pb-20">
-        <div className="border border-white/8 bg-white/[0.015] rounded-3xl p-6 sm:p-8">
-          <div className="flex items-center gap-2 mb-6">
-            <Calendar className="text-emerald-400" size={20} />
-            <h3 className="text-xl sm:text-2xl font-black text-white">Upcoming & Active IPO Tracker</h3>
+            <span className="text-[10px] font-black tracking-widest text-emerald-400 uppercase bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
+              Live Updates
+            </span>
           </div>
 
           <div className="overflow-x-auto">
@@ -300,6 +265,100 @@ export default async function Home() {
               </tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      {/* ── CORE HUBS GRID ── */}
+      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 pt-16">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl font-black uppercase tracking-wider text-slate-400 flex items-center justify-center gap-2">
+            <Sparkles size={16} className="text-violet-400" /> Core Portals & Directories
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {CORE_HUBS.map((hub, i) => (
+            <Link
+              key={i}
+              href={hub.href}
+              className={`group relative border rounded-2xl p-6 transition-all duration-300 ${hub.color}`}
+            >
+              <div className="absolute top-4 right-4 text-[9px] font-black px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-300">
+                {hub.tag}
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                {hub.icon}
+              </div>
+              <h3 className="text-lg font-black mb-2 flex items-center gap-1">
+                {hub.title} <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+              </h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                {hub.desc}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* ── FEATURED BLOGS & NEWS (UPGRADED CLICKABLE CARDS TO /MARKET/[SLUG]) ── */}
+      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 py-20">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs font-bold text-violet-300 uppercase tracking-widest mb-4">
+              📰 Market & Tech Insights
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight">
+              Featured{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-cyan-400">
+                Articles
+              </span>
+            </h2>
+            <p className="text-slate-400 mt-2">Latest stock analysis, IPO guides, and technology reviews.</p>
+          </div>
+          <Link href="/market"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-bold transition group">
+            All Articles <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {blogs.map((blog) => (
+            <Link
+              key={blog._id}
+              href={`/market/${blog.slug}`}
+              className="group bg-white/[0.02] border border-white/8 hover:border-violet-500/30 rounded-2xl overflow-hidden hover:-translate-y-1 hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="relative aspect-[16/10] bg-white/5 overflow-hidden">
+                <Image
+                  src={blog.imageUrl || "/og-image.jpg"}
+                  alt={blog.title}
+                  fill
+                  className="object-cover opacity-60 group-hover:opacity-85 group-hover:scale-105 transition-all duration-500"
+                />
+                <span className={`absolute top-4 left-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider backdrop-blur-md ${getCategoryBadgeClass(blog.category)}`}>
+                  <Tag size={9} />
+                  {blog.category}
+                </span>
+              </div>
+              <div className="p-5">
+                <div className="flex items-center justify-between gap-2 mb-2 text-[10px] text-slate-500 font-bold">
+                  <span>{new Date(blog.publishedAt).toLocaleDateString()}</span>
+                  <span className="flex items-center gap-1">
+                    <Clock size={10} className="text-violet-400" />
+                    {blog.readingTime}
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-white mb-2 group-hover:text-violet-400 transition-colors line-clamp-2 leading-snug">
+                  {blog.title}
+                </h3>
+                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                  {blog.excerpt}
+                </p>
+                <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
+                  Read Article →
+                </span>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 

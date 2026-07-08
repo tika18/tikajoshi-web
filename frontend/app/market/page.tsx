@@ -503,6 +503,26 @@ function SectorChart({ sectors, loading }: { sectors: SectorRow[]; loading: bool
   );
 }
 
+function calculateReadingTime(text: string): string {
+  if (!text) return "2 min read";
+  const words = text.trim().split(/\s+/).length;
+  const time = Math.max(1, Math.ceil(words / 200));
+  return `${time} min read`;
+}
+
+function getCategoryBadgeClass(category: string): string {
+  switch (category) {
+    case "Technical Analysis":
+      return "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20";
+    case "IPO Updates":
+      return "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20";
+    case "Vehicles & Tech":
+      return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
+    default: // NEPSE News
+      return "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+  }
+}
+
 /* ═══════════════════════════════════════════════════
    MAIN PAGE
 ═══════════════════════════════════════════════════ */
@@ -1063,50 +1083,68 @@ export default function MarketPage() {
                 Stay updated with daily analysis, expert market views, technical trend reports, and upcoming IPO notices for the Nepal Share Market.
               </p>
 
-              {blogs.length === 0 ? (
-                <div className="text-center py-16 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl">
-                  <p className="text-slate-500 text-sm">No market analysis posts published yet. Use the admin panel to publish NEPSE News!</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {blogs.map((blog) => (
-                    <Link
-                      key={blog._id}
-                      href={`/market/${blog.slug}`}
-                      className="group bg-[#020817] border border-slate-800 hover:border-emerald-500/30 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/[0.02]"
-                    >
-                      <div className="relative aspect-[16/10] bg-slate-900 overflow-hidden">
-                        {blog.imageUrl && (
-                          <Image
-                            src={blog.imageUrl}
-                            alt={blog.title}
-                            fill
-                            className="object-cover opacity-60 group-hover:opacity-85 group-hover:scale-105 transition-all duration-500"
-                          />
-                        )}
-                        <span className="absolute top-4 left-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider text-white bg-black/60 border border-white/10 backdrop-blur-md">
-                          <Tag size={9} className="text-emerald-400" />
-                          {blog.category || "Market"}
-                        </span>
-                      </div>
-                      <div className="p-5">
-                        <p className="text-[10px] text-slate-500 font-bold mb-2">
-                          {new Date(blog.publishedAt).toLocaleDateString()}
-                        </p>
-                        <h3 className="text-sm font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
-                          {blog.title}
-                        </h3>
-                        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                          {blog.excerpt}
-                        </p>
-                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
-                          Read Article →
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
+              {(() => {
+                const marketCategories = ["NEPSE News", "Technical Analysis", "IPO Updates"];
+                const filteredBlogs = blogs.filter((b: any) => marketCategories.includes(b.category || "NEPSE News"));
+
+                if (filteredBlogs.length === 0) {
+                  return (
+                    <div className="text-center py-16 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl">
+                      <p className="text-slate-500 text-sm">No market analysis posts published yet. Use the admin panel to publish NEPSE News!</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredBlogs.map((blog) => {
+                      const bodyText = typeof blog.body === "string" ? blog.body : Array.isArray(blog.body) ? JSON.stringify(blog.body) : "";
+                      const readingTime = calculateReadingTime(bodyText);
+                      const displayCategory = blog.category || "NEPSE News";
+                      return (
+                        <Link
+                          key={blog._id}
+                          href={`/market/${blog.slug}`}
+                          className="group bg-[#020817] border border-slate-800 hover:border-emerald-500/30 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/[0.02]"
+                        >
+                          <div className="relative aspect-[16/10] bg-slate-900 overflow-hidden">
+                            {blog.imageUrl && (
+                              <Image
+                                src={blog.imageUrl}
+                                alt={blog.title}
+                                fill
+                                className="object-cover opacity-60 group-hover:opacity-85 group-hover:scale-105 transition-all duration-500"
+                              />
+                            )}
+                            <span className={`absolute top-4 left-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider backdrop-blur-md ${getCategoryBadgeClass(displayCategory)}`}>
+                              <Tag size={9} />
+                              {displayCategory}
+                            </span>
+                          </div>
+                          <div className="p-5">
+                            <div className="flex items-center justify-between gap-2 mb-2 text-[10px] text-slate-500 font-bold">
+                              <span>{new Date(blog.publishedAt).toLocaleDateString()}</span>
+                              <span className="flex items-center gap-1">
+                                <Clock size={10} className="text-emerald-400" />
+                                {readingTime}
+                              </span>
+                            </div>
+                            <h3 className="text-sm font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
+                              {blog.title}
+                            </h3>
+                            <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                              {blog.excerpt || blog.metaDescription}
+                            </p>
+                            <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
+                              Read Article →
+                            </span>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}

@@ -22,15 +22,15 @@ export async function GET(req: Request) {
           apiVersion: "2024-01-01",
         });
 
-        let query = `*[_type == "post"] | order(publishedAt desc)[0..10] {
-          _id, title, excerpt, seoDescription, keywords, targetPage, publishedAt,
+        let query = `*[_type == "post"] | order(publishedAt desc)[0..20] {
+          _id, title, excerpt, metaDescription, keywords, targetPage, publishedAt, category, body,
           "slug": slug.current,
           "imageUrl": mainImage.asset->url
         }`;
 
         if (targetPage) {
-          query = `*[_type == "post" && targetPage == $targetPage] | order(publishedAt desc)[0..10] {
-            _id, title, excerpt, seoDescription, keywords, targetPage, publishedAt,
+          query = `*[_type == "post" && targetPage == $targetPage] | order(publishedAt desc)[0..20] {
+            _id, title, excerpt, metaDescription, keywords, targetPage, publishedAt, category, body,
             "slug": slug.current,
             "imageUrl": mainImage.asset->url
           }`;
@@ -60,12 +60,14 @@ export async function GET(req: Request) {
                 _id: lp.id,
                 title: lp.title,
                 excerpt: lp.excerpt || lp.metaDescription,
-                seoDescription: lp.metaDescription,
+                metaDescription: lp.metaDescription,
                 keywords: lp.keywords?.join(", "),
                 targetPage: lp.targetPage,
                 publishedAt: lp.publishedAt,
                 slug: lp.slug,
-                imageUrl: lp.imageUrl
+                imageUrl: lp.imageUrl,
+                category: lp.category || "NEPSE News",
+                body: lp.body
               });
             }
           });

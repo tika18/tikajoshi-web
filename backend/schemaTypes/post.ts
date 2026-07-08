@@ -42,10 +42,30 @@ export default defineType({
       },
     }),
     defineField({
-      name: 'categories',
-      title: 'Categories',
+      name: 'category',
+      title: 'Category',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'NEPSE News', value: 'NEPSE News' },
+          { title: 'Technical Analysis', value: 'Technical Analysis' },
+          { title: 'IPO Updates', value: 'IPO Updates' },
+          { title: 'Vehicles & Tech', value: 'Vehicles & Tech' },
+        ],
+      },
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'secondaryImages',
+      title: 'Secondary Images (Gallery)',
       type: 'array',
-      of: [{type: 'reference', to: {type: 'category'}}],
+      of: [
+        {
+          type: 'image',
+          options: { hotspot: true }
+        }
+      ],
+      validation: (Rule) => Rule.max(4),
     }),
     defineField({
       name: 'publishedAt',
@@ -53,10 +73,16 @@ export default defineType({
       type: 'datetime',
     }),
     defineField({
-      name: 'seoDescription',
-      title: 'SEO Meta Description',
+      name: 'metaDescription',
+      title: 'Meta Description',
       type: 'string',
-      validation: (Rule) => Rule.max(160),
+      validation: (Rule) => Rule.custom((text) => {
+        if (!text) return true;
+        if (text.length < 150 || text.length > 160) {
+          return 'Warning: Meta description is recommended to be between 150 and 160 characters.';
+        }
+        return true;
+      }).warning(),
     }),
     defineField({
       name: 'keywords',
