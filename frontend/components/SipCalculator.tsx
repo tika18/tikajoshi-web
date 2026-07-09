@@ -159,7 +159,7 @@ export default function SipCalculator() {
                 contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #334155", borderRadius: "8px" }}
                 itemStyle={{ fontSize: "12px", fontWeight: "bold" }}
                 labelStyle={{ color: "#94a3b8", fontSize: "12px", marginBottom: "4px" }}
-                formatter={(value: number) => ["Rs " + value.toLocaleString("en-NP"), undefined]}
+                formatter={(value: any) => ["Rs " + Number(value || 0).toLocaleString("en-NP"), ""]}
               />
               <Legend wrapperStyle={{ fontSize: "11px", marginTop: "10px" }} />
               <Line type="monotone" dataKey="Invested" stroke="#8b5cf6" strokeWidth={2} dot={false} />

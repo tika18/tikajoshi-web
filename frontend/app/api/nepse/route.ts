@@ -72,7 +72,7 @@ const SECTOR_MAP: Record<string, string> = {
 
   // Others / Investment
   HIDCL: "Investment", CHDC: "Investment", NTC: "Telecom",
-  NIFRA: "Investment", CGH: "Hotels",
+  NIFRA: "Investment",
 };
 
 /* ──────────────────────────────────────────────────────

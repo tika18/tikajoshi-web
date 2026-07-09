@@ -1080,9 +1080,14 @@ export default function MarketPage() {
     ) : (
           <div className="space-y-8 animate-fade-up">
             <div className="bg-[#0d1520] border border-slate-700/50 rounded-3xl p-6 sm:p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <BlogIcon size={24} className="text-emerald-400" />
-                <h2 className="text-xl sm:text-2xl font-black text-white">NEPSE News & Technical Analysis</h2>
+              <div className="flex flex-col mb-6">
+                <div className="flex items-center gap-3">
+                  <BlogIcon size={24} className="text-emerald-400" />
+                  <h2 className="text-xl sm:text-2xl font-black text-white">NEPSE News & Technical Analysis</h2>
+                </div>
+                <p className="text-xs text-slate-500 mt-1.5 font-semibold tracking-wide">
+                  Real-time &lsquo;live share market&rsquo; news and technical briefs.
+                </p>
               </div>
               <p className="text-slate-400 text-xs sm:text-sm mb-8 leading-relaxed">
                 Stay updated with daily analysis, expert market views, technical trend reports, and upcoming IPO notices for the Nepal Share Market.

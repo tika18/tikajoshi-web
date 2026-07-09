@@ -1,6 +1,7 @@
 import { client } from "@/sanity/client";
 import Navbar from "@/components/Navbar";
 import EngagementSection from "@/components/EngagementSection";
+import ShareButtons from "@/components/ShareButtons";
 import Image from "next/image";
 import Link from "next/link";
 import fs from "fs";
@@ -110,10 +111,22 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     };
   }
 
+  const targetedKeywords = [
+    "live share market",
+    "share market live",
+    "nepal share market",
+    "share market today",
+    "share market nepal",
+    "nepali share market",
+    "share market in nepal"
+  ];
+  const postKeywords = post.keywords || [];
+  const mergedKeywords = Array.from(new Set([...postKeywords, ...targetedKeywords]));
+
   return {
     title: post.seoTitle || post.title,
     description: post.metaDescription || post.excerpt,
-    keywords: post.keywords?.join(", ") || "",
+    keywords: mergedKeywords.join(", "),
     openGraph: {
       title: post.seoTitle || post.title,
       description: post.metaDescription || post.excerpt,
@@ -176,12 +189,18 @@ export default async function MarketBlogDetail({ params }: { params: { slug: str
         {/* Content & Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-8">
+            {/* Top Share Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-4">
+              <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Tikajoshi Editorial</span>
+              <ShareButtons title={post.title} />
+            </div>
+
             {/* Article Content */}
             <article 
               className="prose prose-invert prose-slate max-w-none text-slate-300 leading-relaxed font-sans text-sm sm:text-base
                 prose-headings:font-black prose-headings:text-white
                 prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
-                prose-p:mb-6 prose-strong:text-white prose-a:text-cyan-400"
+                prose-p:mb-6 prose-strong:text-white prose-a:text-cyan-400 bg-white/[0.01] border border-white/[0.03] rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl"
             >
               {Array.isArray(post.body) ? (
                 <PortableText value={post.body} />
@@ -191,6 +210,12 @@ export default async function MarketBlogDetail({ params }: { params: { slug: str
                 <div className="whitespace-pre-line">{post.body}</div>
               )}
             </article>
+
+            {/* Bottom Share Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-white/[0.015] border border-white/[0.06] rounded-2xl p-4 mt-6">
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Help spread the word:</span>
+              <ShareButtons title={post.title} />
+            </div>
 
             {/* Secondary Images Gallery */}
             {post.secondaryImages && post.secondaryImages.length > 0 && (

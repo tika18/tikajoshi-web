@@ -141,6 +141,9 @@ const initial = user?.displayName ? String(user.displayName)[0].toUpperCase() : 
             <Link href="/news" className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.1em] text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 rounded-lg hover:bg-cyan-500/10 transition">
               News
             </Link>
+            <Link href="/blog" className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.1em] text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 rounded-lg hover:bg-violet-500/10 transition">
+              Blogs
+            </Link>
             <Link href="/chill-zone" className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.1em] text-red-600 dark:text-red-500 hover:text-red-700 dark:hover:text-red-400 rounded-lg hover:bg-red-500/10 transition">
               Live Sports
             </Link>
@@ -312,6 +315,7 @@ const initial = user?.displayName ? String(user.displayName)[0].toUpperCase() : 
                 {[
                   { href: "/", label: "Home", icon: "🏠" },
                   { href: "/news", label: "News", icon: "📰" },
+                  { href: "/blog", label: "Blogs", icon: "✍️" },
                   { href: "/chill-zone", label: "Live Sports", icon: "📺" },
                   { href: "/vehicles", label: "Vehicles", icon: "🏍️" },
                   { href: "/quiz", label: "Quiz", icon: "🧠" },

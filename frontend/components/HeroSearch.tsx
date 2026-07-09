@@ -248,8 +248,8 @@ export default function HeroSearch() {
           </div>
 
           {/* Subheading */}
-          <p className="text-slate-400 text-[15px] sm:text-lg font-light leading-relaxed max-w-lg mb-8 sm:mb-10">
-            Free IOE notes, real-time NEPSE updates, live sports, and professional AI tools — all in one place.
+          <p className="text-slate-400 text-sm sm:text-base font-light leading-relaxed max-w-2xl mb-8 sm:mb-10">
+            Your ultimate destination for <span className="text-white font-medium">‘share market live’</span> updates and deep <span className="text-white font-medium">‘nepal share market’</span> analytics. Track <span className="text-white font-medium">‘share market today’</span> trends, upcoming IPOs, and daily <span className="text-white font-medium">‘share market nepal’</span> insights.
           </p>
 
           {/* ── SEARCH BAR ── */}
