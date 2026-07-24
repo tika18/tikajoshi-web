@@ -153,9 +153,10 @@ async function scrapeStocks() {
       /Total Traded Shares\s*:\s*([\d,]+(?:\.\d+)?)/i
     );
     const companiesMatch = pageText.match(
-      /(\d+)\s*compani?es?\s*traded/i
+      /Total number of Compa\w*:\s*(\d+)/i
     );
     const dateMatch =
+      pageText.match(/As of\s*[:\-]?\s*(\d{4}-\d{2}-\d{2})/i) ||
       pageText.match(/As of\s*[:\-]?\s*([A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4})/i) ||
       pageText.match(/([A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4})\s*(?:AD|A\.D\.)?/i);
     const timeMatch = pageText.match(/(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?)/i);

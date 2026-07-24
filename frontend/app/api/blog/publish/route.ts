@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@sanity/client";
 import fs from "fs";
 import path from "path";
+import { parse } from "node-html-parser";
 
 export const dynamic = "force-dynamic";
 
@@ -23,79 +24,162 @@ const LINK_RULES = [
   { keyword: "vehicle", url: "/vehicles" }
 ];
 
-// Helper to convert plain text body to PortableText with smart internal links
-function textToPortableText(text: string): any[] {
-  const paragraphs = text.split(/\n+/).filter(p => p.trim().length > 0);
-  
-  return paragraphs.map(p => {
-    const blockKey = Math.random().toString(36).slice(2);
-    const children: any[] = [];
+// Helper to convert HTML content (or plain text) to PortableText with formatting and links preserved
+function htmlToPortableText(html: string): any[] {
+  const root = parse(html);
+  const blocks: any[] = [];
+  let currentInlineSpans: any[] = [];
+  let currentMarkDefs: any[] = [];
+
+  const flushInlineBlocks = () => {
+    if (currentInlineSpans.length > 0) {
+      blocks.push({
+        _type: "block",
+        _key: Math.random().toString(36).slice(2),
+        style: "normal",
+        markDefs: [...currentMarkDefs],
+        children: [...currentInlineSpans]
+      });
+      currentInlineSpans = [];
+      currentMarkDefs = [];
+    }
+  };
+
+  const processInlineNode = (node: any, parentMarks: string[] = []): { spans: any[]; markDefs: any[] } => {
+    const spans: any[] = [];
     const markDefs: any[] = [];
-    
-    let tempText = p;
-    let index = 0;
 
-    // Scan paragraph text for keywords
-    while (tempText.length > 0) {
-      let earliestKeyword = null;
-      let earliestPos = -1;
+    if (node.nodeType === 3) {
+      if (node.text) {
+        spans.push({
+          _type: "span",
+          _key: Math.random().toString(36).slice(2),
+          marks: parentMarks,
+          text: node.text
+        });
+      }
+    } else if (node.nodeType === 1) {
+      const tagName = node.tagName.toLowerCase();
+      let markKey: string | null = null;
+      const marks = [...parentMarks];
 
-      for (const rule of LINK_RULES) {
-        const pos = tempText.indexOf(rule.keyword);
-        if (pos !== -1 && (earliestPos === -1 || pos < earliestPos)) {
-          earliestKeyword = rule;
-          earliestPos = pos;
-        }
+      if (tagName === "strong" || tagName === "b") {
+        marks.push("strong");
+      } else if (tagName === "em" || tagName === "i") {
+        marks.push("em");
+      } else if (tagName === "a") {
+        markKey = `link-${Math.random().toString(36).slice(2)}`;
+        marks.push(markKey);
+        markDefs.push({
+          _key: markKey,
+          _type: "link",
+          href: node.getAttribute("href") || ""
+        });
       }
 
-      if (earliestKeyword && earliestPos !== -1) {
-        // Text before the keyword
-        if (earliestPos > 0) {
-          children.push({
-            _type: "span",
-            _key: `${blockKey}-text-${index++}`,
-            marks: [],
-            text: tempText.substring(0, earliestPos)
-          });
-        }
+      node.childNodes.forEach((child: any) => {
+        const result = processInlineNode(child, marks);
+        spans.push(...result.spans);
+        markDefs.push(...result.markDefs);
+      });
 
-        // The keyword span linked to internal route
-        const markKey = `link-${Math.random().toString(36).slice(2)}`;
-        markDefs.push({
-          _type: "link",
-          _key: markKey,
-          href: earliestKeyword.url
-        });
-
-        children.push({
+      if (node.childNodes.length === 0) {
+        spans.push({
           _type: "span",
-          _key: `${blockKey}-link-${index++}`,
-          marks: [markKey],
-          text: earliestKeyword.keyword
+          _key: Math.random().toString(36).slice(2),
+          marks: marks,
+          text: ""
         });
-
-        // Slice string past the keyword
-        tempText = tempText.substring(earliestPos + earliestKeyword.keyword.length);
-      } else {
-        // No more keywords found, add the rest of the text
-        children.push({
-          _type: "span",
-          _key: `${blockKey}-text-${index++}`,
-          marks: [],
-          text: tempText
-        });
-        tempText = "";
       }
     }
 
-    return {
-      _type: "block",
-      _key: blockKey,
-      style: "normal",
-      markDefs,
-      children
-    };
-  });
+    return { spans, markDefs };
+  };
+
+  const processInlineChildren = (element: any) => {
+    const spans: any[] = [];
+    const markDefs: any[] = [];
+
+    element.childNodes.forEach((node: any) => {
+      const result = processInlineNode(node);
+      spans.push(...result.spans);
+      markDefs.push(...result.markDefs);
+    });
+
+    return { spans, markDefs };
+  };
+
+  const processNode = (node: any) => {
+    if (node.nodeType === 3) {
+      const text = node.text;
+      if (text) {
+        currentInlineSpans.push({
+          _type: "span",
+          _key: Math.random().toString(36).slice(2),
+          marks: [],
+          text: text
+        });
+      }
+    } else if (node.nodeType === 1) {
+      const tagName = node.tagName.toLowerCase();
+
+      if (["h1", "h2", "h3", "h4", "h5", "h6", "p", "div", "blockquote"].includes(tagName)) {
+        flushInlineBlocks();
+        
+        const childrenResult = processInlineChildren(node);
+        blocks.push({
+          _type: "block",
+          _key: Math.random().toString(36).slice(2),
+          style: ["h1", "h2", "h3", "h4", "h5", "h6"].includes(tagName) ? tagName : "normal",
+          markDefs: childrenResult.markDefs,
+          children: childrenResult.spans.length > 0 ? childrenResult.spans : [{
+            _type: "span",
+            _key: Math.random().toString(36).slice(2),
+            marks: [],
+            text: ""
+          }]
+        });
+      } else if (tagName === "li") {
+        flushInlineBlocks();
+        const parentTag = node.parentNode?.tagName?.toLowerCase();
+        const listItemType = parentTag === "ol" ? "number" : "bullet";
+        const childrenResult = processInlineChildren(node);
+        blocks.push({
+          _type: "block",
+          _key: Math.random().toString(36).slice(2),
+          style: "normal",
+          listItem: listItemType,
+          level: 1,
+          markDefs: childrenResult.markDefs,
+          children: childrenResult.spans.length > 0 ? childrenResult.spans : [{
+            _type: "span",
+            _key: Math.random().toString(36).slice(2),
+            marks: [],
+            text: ""
+          }]
+        });
+      } else if (tagName === "ul" || tagName === "ol") {
+        flushInlineBlocks();
+        node.childNodes.forEach(processNode);
+      } else if (tagName === "br") {
+        currentInlineSpans.push({
+          _type: "span",
+          _key: Math.random().toString(36).slice(2),
+          marks: [],
+          text: "\n"
+        });
+      } else {
+        const inlineResult = processInlineNode(node);
+        currentInlineSpans.push(...inlineResult.spans);
+        currentMarkDefs.push(...inlineResult.markDefs);
+      }
+    }
+  };
+
+  root.childNodes.forEach(processNode);
+  flushInlineBlocks();
+
+  return blocks;
 }
 
 // URL slug sanitization helper
@@ -197,7 +281,7 @@ export async function POST(req: Request) {
           }
         }
 
-        const portableTextBody = textToPortableText(richTextBody);
+        const portableTextBody = htmlToPortableText(linkedHtmlBody);
 
         const sanityDoc: any = {
           _type: "post",

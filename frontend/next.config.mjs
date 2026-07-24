@@ -1,3 +1,7 @@
+if (process.env.VERCEL !== "1" && process.env.NETLIFY !== "true") {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // IGNORE ERRORS DURING BUILD (Crucial for Vercel)

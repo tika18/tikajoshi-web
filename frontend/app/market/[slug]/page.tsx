@@ -202,13 +202,23 @@ export default async function MarketBlogDetail({ params }: { params: { slug: str
                 prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
                 prose-p:mb-6 prose-strong:text-white prose-a:text-cyan-400 bg-white/[0.01] border border-white/[0.03] rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl"
             >
-              {Array.isArray(post.body) ? (
-                <PortableText value={post.body} />
-              ) : post.bodyHtml ? (
+              {post.bodyHtml ? (
                 <div dangerouslySetInnerHTML={{ __html: post.bodyHtml }} />
-              ) : (
-                <div className="whitespace-pre-line">{post.body}</div>
-              )}
+              ) : Array.isArray(post.body) ? (
+                post.body.some((block: any) =>
+                  block.children?.some((child: any) => /<[a-z][\s\S]*>/i.test(child.text))
+                ) ? (
+                  <div dangerouslySetInnerHTML={{ __html: post.body.map((block: any) => block.children?.map((c: any) => c.text).join("") || "").join("\n") }} />
+                ) : (
+                  <PortableText value={post.body} />
+                )
+              ) : typeof post.body === "string" ? (
+                /<[a-z][\s\S]*>/i.test(post.body) ? (
+                  <div dangerouslySetInnerHTML={{ __html: post.body }} />
+                ) : (
+                  <div className="whitespace-pre-line">{post.body}</div>
+                )
+              ) : null}
             </article>
 
             {/* Bottom Share Bar */}

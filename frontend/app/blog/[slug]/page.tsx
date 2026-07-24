@@ -6,39 +6,131 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import fs from "fs";
+import path from "path";
+
+interface LocalPost {
+  id?: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  body: string | any[];
+  bodyHtml?: string;
+  imageUrl?: string;
+  publishedAt: string;
+  seoDescription?: string;
+}
+
+async function getPostData(slug: string): Promise<LocalPost | null> {
+  // 1. Try Sanity
+  if (process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) {
+    try {
+      const post = await client.fetch(
+        `*[_type == "post" && slug.current == $slug][0]{
+          title, excerpt, publishedAt, body, seoDescription,
+          "imageUrl": mainImage.asset->url
+        }`,
+        { slug }
+      );
+      if (post) {
+        return {
+          title: post.title,
+          slug,
+          excerpt: post.excerpt || "",
+          body: post.body || "",
+          imageUrl: post.imageUrl,
+          publishedAt: post.publishedAt || new Date().toISOString(),
+          seoDescription: post.seoDescription
+        };
+      }
+    } catch (e) {
+      console.error("Sanity single post fetch error:", e);
+    }
+  }
+
+  // 2. Local Fallback
+  try {
+    const localDbPath = path.join(process.cwd(), "lib", "db", "blogs.json");
+    if (fs.existsSync(localDbPath)) {
+      const content = fs.readFileSync(localDbPath, "utf-8");
+      const posts = JSON.parse(content);
+      if (Array.isArray(posts)) {
+        const found = posts.find((p: any) => p.slug === slug);
+        if (found) {
+          return {
+            title: found.title,
+            slug: found.slug,
+            excerpt: found.excerpt || "",
+            body: found.body || "",
+            bodyHtml: found.bodyHtml,
+            imageUrl: found.imageUrl,
+            publishedAt: found.publishedAt,
+            seoDescription: found.metaDescription
+          };
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Local single post fetch error:", e);
+  }
+
+  return null;
+}
+
+async function getRelatedData(currentSlug: string): Promise<any[]> {
+  // 1. Try Sanity
+  if (process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) {
+    try {
+      const related = await client.fetch(
+        `*[_type == "post" && slug.current != $slug] | order(publishedAt desc)[0..2]{
+          title, "slug": slug.current, "imageUrl": mainImage.asset->url, publishedAt
+        }`,
+        { slug: currentSlug }
+      );
+      if (Array.isArray(related) && related.length > 0) {
+        return related;
+      }
+    } catch (e) {
+      console.error("Sanity related posts fetch error:", e);
+    }
+  }
+
+  // 2. Local Fallback
+  try {
+    const localDbPath = path.join(process.cwd(), "lib", "db", "blogs.json");
+    if (fs.existsSync(localDbPath)) {
+      const content = fs.readFileSync(localDbPath, "utf-8");
+      const posts = JSON.parse(content);
+      if (Array.isArray(posts)) {
+        return posts
+          .filter((p: any) => p.slug !== currentSlug)
+          .sort((a: any, b: any) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+          .slice(0, 3)
+          .map((p: any) => ({
+            title: p.title,
+            slug: p.slug,
+            imageUrl: p.imageUrl,
+            publishedAt: p.publishedAt
+          }));
+      }
+    }
+  } catch (e) {
+    console.error("Local related posts fetch error:", e);
+  }
+
+  return [];
+}
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const post = await client.fetch(
-    `*[_type == "post" && slug.current == $slug][0]{ title, seoDescription, excerpt }`,
-    { slug: params.slug }
-  );
+  const post = await getPostData(params.slug);
   return {
     title: post?.title || "Blog — Tikajoshi",
     description: post?.seoDescription || post?.excerpt || "",
   };
 }
 
-async function getPost(slug: string) {
-  return await client.fetch(
-    `*[_type == "post" && slug.current == $slug][0]{
-      title, excerpt, publishedAt, body,
-      "imageUrl": mainImage.asset->url
-    }`,
-    { slug }
-  );
-}
-
-async function getRelated(currentSlug: string) {
-  return await client.fetch(
-    `*[_type == "post" && slug.current != $slug] | order(publishedAt desc)[0..2]{
-      title, "slug": slug.current, "imageUrl": mainImage.asset->url, publishedAt
-    }`,
-    { slug: currentSlug }
-  );
-}
-
 export default async function BlogDetail({ params }: { params: { slug: string } }) {
-  const [post, related] = await Promise.all([getPost(params.slug), getRelated(params.slug)]);
+  const [post, related] = await Promise.all([getPostData(params.slug), getRelatedData(params.slug)]);
   if (!post) notFound();
 
   return (
@@ -85,8 +177,24 @@ export default async function BlogDetail({ params }: { params: { slug: string } 
           prose-headings:font-black prose-headings:text-white
           prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
           prose-p:text-slate-300 prose-p:leading-relaxed prose-p:mb-4
-          prose-strong:text-white prose-a:text-violet-400">
-          {post.body && <PortableText value={post.body} />}
+          prose-strong:text-white prose-a:text-violet-400 font-sans">
+          {post.bodyHtml ? (
+            <div dangerouslySetInnerHTML={{ __html: post.bodyHtml }} />
+          ) : Array.isArray(post.body) ? (
+            post.body.some((block: any) =>
+              block.children?.some((child: any) => /<[a-z][\s\S]*>/i.test(child.text))
+            ) ? (
+              <div dangerouslySetInnerHTML={{ __html: post.body.map((block: any) => block.children?.map((c: any) => c.text).join("") || "").join("\n") }} />
+            ) : (
+              <PortableText value={post.body} />
+            )
+          ) : typeof post.body === "string" ? (
+            /<[a-z][\s\S]*>/i.test(post.body) ? (
+              <div dangerouslySetInnerHTML={{ __html: post.body }} />
+            ) : (
+              <div className="whitespace-pre-line">{post.body}</div>
+            )
+          ) : null}
         </div>
 
         {/* Related */}
