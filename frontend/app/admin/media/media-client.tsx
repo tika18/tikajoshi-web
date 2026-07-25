@@ -134,8 +134,9 @@ export default function MediaClient({ initialAssets }: { initialAssets: MediaAss
     if (!confirm(`Are you sure you want to delete "${name || "this asset"}"?`)) return;
 
     const toastId = toast("Deleting asset...", "loading");
-    startTransition(async () => {
-      const res = await deleteMediaAsset(id);
+    const res = await deleteMediaAsset(id);
+
+    startTransition(() => {
       if (res.success) {
         toast("Asset deleted successfully", "success");
         setAssets((prev) => prev.filter((a) => a._id !== id));

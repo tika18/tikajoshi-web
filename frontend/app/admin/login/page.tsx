@@ -1,33 +1,37 @@
 // frontend/app/admin/login/page.tsx
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { loginAdmin } from "@/actions/adminAuth";
 import { Lock, User, ArrowRight, Loader2, ShieldCheck } from "lucide-react";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setLoading(true);
 
     const formData = new FormData(e.currentTarget);
     
-    startTransition(async () => {
+    try {
       const res = await loginAdmin(null, formData);
       if (res.success) {
-        // Redirect to admin dashboard
-        router.push("/admin");
-        router.refresh();
+        // Use clean full-page load redirection to refresh cookies and clear states
+        window.location.href = "/admin";
       } else {
         setError(res.error || "Login failed");
+        setLoading(false);
       }
-    });
+    } catch (err: any) {
+      console.error("Client login error:", err);
+      setError(err.message || "An unexpected error occurred during login.");
+      setLoading(false);
+    }
   };
+
 
   return (
     <div className="min-h-screen bg-[#020408] flex items-center justify-center p-4 relative overflow-hidden">
@@ -79,7 +83,7 @@ export default function AdminLoginPage() {
                   name="username"
                   required
                   placeholder="admin"
-                  disabled={isPending}
+                  disabled={loading}
                   className="w-full bg-white/[0.03] border border-white/[0.06] focus:border-indigo-500/60 rounded-xl py-3.5 pl-11 pr-4 text-white text-sm placeholder:text-slate-600 outline-none transition"
                 />
               </div>
@@ -98,7 +102,7 @@ export default function AdminLoginPage() {
                   name="password"
                   required
                   placeholder="••••••••"
-                  disabled={isPending}
+                  disabled={loading}
                   className="w-full bg-white/[0.03] border border-white/[0.06] focus:border-indigo-500/60 rounded-xl py-3.5 pl-11 pr-4 text-white text-sm placeholder:text-slate-600 outline-none transition"
                 />
               </div>
@@ -106,10 +110,10 @@ export default function AdminLoginPage() {
 
             <button
               type="submit"
-              disabled={isPending}
+              disabled={loading}
               className="w-full mt-6 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition shadow-lg shadow-indigo-600/20 active:scale-[0.98]"
             >
-              {isPending ? (
+              {loading ? (
                 <>
                   <Loader2 size={16} className="animate-spin" /> Authenticating...
                 </>

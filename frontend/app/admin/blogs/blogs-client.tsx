@@ -123,9 +123,10 @@ export default function BlogsClient({ initialPosts }: { initialPosts: Post[] }) 
     setActionId(id);
     const toastId = toast("Deleting blog...", "loading");
 
-    startTransition(async () => {
-      const res = await deletePost(id);
-      setActionId(null);
+    const res = await deletePost(id);
+    setActionId(null);
+
+    startTransition(() => {
       if (res.success) {
         toast("Blog deleted successfully", "success");
         setPosts((prev) => prev.filter((p) => p._id !== id));
@@ -148,8 +149,9 @@ export default function BlogsClient({ initialPosts }: { initialPosts: Post[] }) 
     const toastId = toast(`Deleting ${count} post(s)...`, "loading");
     const idsArray = Array.from(selectedIds);
 
-    startTransition(async () => {
-      const res = await bulkDeletePosts(idsArray);
+    const res = await bulkDeletePosts(idsArray);
+
+    startTransition(() => {
       if (res.success) {
         toast(`${count} post(s) deleted successfully`, "success");
         setPosts((prev) => prev.filter((p) => !selectedIds.has(p._id)));
@@ -166,8 +168,9 @@ export default function BlogsClient({ initialPosts }: { initialPosts: Post[] }) 
     const toastId = toast(`${publish ? "Publishing" : "Unpublishing"} ${count} post(s)...`, "loading");
     const idsArray = Array.from(selectedIds);
 
-    startTransition(async () => {
-      const res = await bulkPublishPosts(idsArray, publish);
+    const res = await bulkPublishPosts(idsArray, publish);
+
+    startTransition(() => {
       if (res.success) {
         toast(`${count} post(s) updated successfully`, "success");
         

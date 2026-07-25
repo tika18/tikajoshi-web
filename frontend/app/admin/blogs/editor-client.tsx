@@ -140,7 +140,9 @@ export default function EditorClient({ post }: EditorClientProps) {
       if (res.success) {
         setSaveStatus("saved");
         if (!silent) toast("Post saved successfully", "success");
-        router.refresh();
+        startTransition(() => {
+          router.refresh();
+        });
       } else {
         setSaveStatus("error");
         if (!silent) toast(res.error || "Save failed", "error");
@@ -155,8 +157,10 @@ export default function EditorClient({ post }: EditorClientProps) {
         
         // Transition to edit URL silently without reload
         skipAutosaveRef.current = true; // prevent saving again immediately on reload
-        router.push(`/admin/blogs/${res.id}/edit`);
-        router.refresh();
+        startTransition(() => {
+          router.push(`/admin/blogs/${res.id}/edit`);
+          router.refresh();
+        });
       } else {
         setSaveStatus("error");
         if (!silent) toast(res.error || "Create failed", "error");
