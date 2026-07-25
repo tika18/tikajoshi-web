@@ -22,6 +22,7 @@ import {
   Eye,
 } from "lucide-react";
 import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface EditorClientProps {
   post?: {
