@@ -89,7 +89,7 @@ export default function DashboardClient({ posts }: { posts: Post[] }) {
     const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
 
     // Generate area path for filling gradient
-    const areaPath = total > 0
+    const areaPath = posts.length > 0
       ? `${linePath} L ${points[11].x} ${padding + chartHeight} L ${points[0].x} ${padding + chartHeight} Z`
       : "";
 
