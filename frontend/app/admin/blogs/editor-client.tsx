@@ -85,8 +85,36 @@ export default function EditorClient({ post }: EditorClientProps) {
   }, [post]);
 
   const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
+  const [editorMode, setEditorMode] = useState<"blocks" | "html">("blocks");
+  const [htmlContent, setHtmlContent] = useState("");
 
-  // 3. Media Picker States
+  // Sync editor mode and HTML content when post loads
+  useEffect(() => {
+    if (post) {
+      let isHtml = false;
+      let bodyText = "";
+
+      if (Array.isArray(post.body)) {
+        isHtml = post.body.some((block: any) =>
+          block.children?.some((child: any) => /<[a-z][\s\S]*>/i.test(child.text))
+        );
+        bodyText = post.body
+          .map((block: any) => block.children?.map((c: any) => c.text).join("") || "")
+          .join("\n");
+      } else if (typeof post.body === "string") {
+        isHtml = /<[a-z][\s\S]*>/i.test(post.body);
+        bodyText = post.body;
+      }
+
+      if (isHtml) {
+        setEditorMode("html");
+        setHtmlContent(bodyText);
+      } else {
+        setEditorMode("blocks");
+        setHtmlContent("");
+      }
+    }
+  }, [post]);  // 3. Media Picker States
   const [mediaModalOpen, setMediaModalOpen] = useState(false);
   const [mediaAssets, setMediaAssets] = useState<any[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
@@ -97,8 +125,27 @@ export default function EditorClient({ post }: EditorClientProps) {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const skipAutosaveRef = useRef(false); // Prevents initial triggers
 
-  // Generate standard PortableText format from local blocks
+  // Generate standard PortableText format from local state
   const getSanityBody = () => {
+    if (editorMode === "html") {
+      return [
+        {
+          _type: "block",
+          _key: "html-body",
+          style: "normal",
+          markDefs: [],
+          children: [
+            {
+              _type: "span",
+              _key: "html-span",
+              marks: [],
+              text: htmlContent,
+            },
+          ],
+        },
+      ];
+    }
+
     return blocks.map((b) => ({
       _type: "block",
       _key: b.id,
@@ -182,7 +229,7 @@ export default function EditorClient({ post }: EditorClientProps) {
     }, 3000); // 3-second debounce
 
     return () => clearTimeout(timer);
-  }, [title, slug, excerpt, publishedAt, blocks, mainImage, seoTitle, seoDescription]);
+  }, [title, slug, excerpt, publishedAt, blocks, htmlContent, editorMode, mainImage, seoTitle, seoDescription]);
 
   // 5. Block Operations
   const addBlock = (style: Block["style"]) => {
@@ -273,25 +320,30 @@ export default function EditorClient({ post }: EditorClientProps) {
     setUploadingImage(true);
     const toastId = toast("Uploading image...", "loading");
 
-    const formData = new FormData();
-    formData.append("file", file);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
-    const res = await uploadMedia(formData);
-    setUploadingImage(false);
-
-    if (res.success && res.asset) {
-      toast("Image uploaded and selected", "success");
-      setMainImage({
-        _type: "image",
-        asset: {
-          _ref: res.asset._id,
-          _type: "reference",
-        },
-      });
-      setImageUrl(res.asset.url);
-      setMediaModalOpen(false);
-    } else {
-      toast(res.error || "Upload failed", "error");
+      const res = await uploadMedia(formData);
+      if (res && res.success && res.asset) {
+        toast("Image uploaded and selected", "success");
+        setMainImage({
+          _type: "image",
+          asset: {
+            _ref: res.asset._id,
+            _type: "reference",
+          },
+        });
+        setImageUrl(res.asset.url);
+        setMediaModalOpen(false);
+      } else {
+        toast(res?.error || "Upload failed", "error");
+      }
+    } catch (err: any) {
+      console.error("Image upload error:", err);
+      toast(err.message || "Failed to upload image due to connection error", "error");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -456,116 +508,175 @@ export default function EditorClient({ post }: EditorClientProps) {
             </div>
           </div>
 
-          {/* Block Content Editor */}
-          <div className="bg-[#05090f]/75 border border-white/5 p-6 rounded-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <div>
-                <h3 className="text-sm font-bold">Block Content Editor</h3>
-                <p className="text-[10px] text-slate-500">Edit elements recursively to form PortableText</p>
+          {/* Editor Mode Selector */}
+          <div className="flex bg-white/[0.02] border border-white/5 rounded-xl p-1 shrink-0">
+            <button
+              onClick={() => {
+                if (editorMode === "html" && confirm("Switch to visual blocks? This will reload your blocks from the saved state. Any custom HTML-only tags could be lost.")) {
+                  setEditorMode("blocks");
+                } else if (editorMode === "blocks") {
+                  setEditorMode("blocks");
+                }
+              }}
+              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+                editorMode === "blocks"
+                  ? "bg-indigo-600 text-white shadow-lg"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              Visual Blocks
+            </button>
+            <button
+              onClick={() => {
+                if (editorMode === "blocks") {
+                  // Auto-generate HTML from current blocks
+                  const generated = blocks.map(b => {
+                    if (b.style === "h2") return `<h2>${b.text}</h2>`;
+                    if (b.style === "h3") return `<h3>${b.text}</h3>`;
+                    if (b.style === "blockquote") return `<blockquote>${b.text}</blockquote>`;
+                    return `<p>${b.text}</p>`;
+                  }).join("\n");
+                  setHtmlContent(generated);
+                  setEditorMode("html");
+                }
+              }}
+              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+                editorMode === "html"
+                  ? "bg-indigo-600 text-white shadow-lg"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              HTML Code / Raw Text
+            </button>
+          </div>
+
+          {editorMode === "blocks" ? (
+            /* Block Content Editor */
+            <div className="bg-[#05090f]/75 border border-white/5 p-6 rounded-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                <div>
+                  <h3 className="text-sm font-bold">Block Content Editor</h3>
+                  <p className="text-[10px] text-slate-500">Edit elements recursively to form PortableText</p>
+                </div>
+                
+                {/* Add Blocks Toolbar */}
+                <div className="flex gap-1 bg-white/[0.02] border border-white/5 p-1 rounded-xl">
+                  {(["normal", "h2", "h3", "blockquote"] as const).map((style) => (
+                    <button
+                      key={style}
+                      onClick={() => addBlock(style)}
+                      className="px-2 py-1 hover:bg-white/5 text-[9px] font-bold text-slate-400 hover:text-white rounded transition"
+                    >
+                      + {style === "normal" ? "Paragraph" : style === "blockquote" ? "Quote" : style.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
               </div>
-              
-              {/* Add Blocks Toolbar */}
-              <div className="flex gap-1 bg-white/[0.02] border border-white/5 p-1 rounded-xl">
-                {(["normal", "h2", "h3", "blockquote"] as const).map((style) => (
-                  <button
-                    key={style}
-                    onClick={() => addBlock(style)}
-                    className="px-2 py-1 hover:bg-white/5 text-[9px] font-bold text-slate-400 hover:text-white rounded transition"
+
+              {/* Blocks List */}
+              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
+                {blocks.map((block, idx) => (
+                  <div
+                    key={block.id}
+                    className="group/block relative bg-white/[0.01] border border-white/5 hover:border-white/10 rounded-xl p-3.5 flex gap-4 transition duration-150"
                   >
-                    + {style === "normal" ? "Paragraph" : style === "blockquote" ? "Quote" : style.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    {/* Block Label badge */}
+                    <span className="absolute left-3.5 top-[-8px] text-[7px] font-black tracking-widest uppercase bg-[#080d14] border border-white/10 text-slate-500 px-1.5 py-0.5 rounded-full">
+                      {block.style === "normal" ? "paragraph" : block.style === "blockquote" ? "quote" : block.style}
+                    </span>
 
-            {/* Blocks List */}
-            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
-              {blocks.map((block, idx) => (
-                <div
-                  key={block.id}
-                  className="group/block relative bg-white/[0.01] border border-white/5 hover:border-white/10 rounded-xl p-3.5 flex gap-4 transition duration-150"
-                >
-                  {/* Block Label badge */}
-                  <span className="absolute left-3.5 top-[-8px] text-[7px] font-black tracking-widest uppercase bg-[#080d14] border border-white/10 text-slate-500 px-1.5 py-0.5 rounded-full">
-                    {block.style === "normal" ? "paragraph" : block.style === "blockquote" ? "quote" : block.style}
-                  </span>
+                    {/* Move & Delete Toolbar */}
+                    <div className="absolute right-3.5 top-[-8px] bg-[#080d14] border border-white/10 px-1.5 py-0.5 rounded-md opacity-0 group-hover/block:opacity-100 flex gap-1.5 transition duration-150">
+                      <button
+                        onClick={() => moveBlock(idx, "up")}
+                        disabled={idx === 0}
+                        className="text-slate-500 hover:text-white disabled:opacity-20 transition"
+                        title="Move Block Up"
+                      >
+                        <ChevronUp size={10} />
+                      </button>
+                      <button
+                        onClick={() => moveBlock(idx, "down")}
+                        disabled={idx === blocks.length - 1}
+                        className="text-slate-500 hover:text-white disabled:opacity-20 transition"
+                        title="Move Block Down"
+                      >
+                        <ChevronDown size={10} />
+                      </button>
+                      <div className="w-px h-3 bg-white/10 self-center" />
+                      <button
+                        onClick={() => removeBlock(block.id)}
+                        className="text-slate-500 hover:text-red-400 transition"
+                        title="Delete Block"
+                      >
+                        <Trash2 size={10} />
+                      </button>
+                    </div>
 
-                  {/* Move & Delete Toolbar */}
-                  <div className="absolute right-3.5 top-[-8px] bg-[#080d14] border border-white/10 px-1.5 py-0.5 rounded-md opacity-0 group-hover/block:opacity-100 flex gap-1.5 transition duration-150">
-                    <button
-                      onClick={() => moveBlock(idx, "up")}
-                      disabled={idx === 0}
-                      className="text-slate-500 hover:text-white disabled:opacity-20 transition"
-                      title="Move Block Up"
-                    >
-                      <ChevronUp size={10} />
-                    </button>
-                    <button
-                      onClick={() => moveBlock(idx, "down")}
-                      disabled={idx === blocks.length - 1}
-                      className="text-slate-500 hover:text-white disabled:opacity-20 transition"
-                      title="Move Block Down"
-                    >
-                      <ChevronDown size={10} />
-                    </button>
-                    <div className="w-px h-3 bg-white/10 self-center" />
-                    <button
-                      onClick={() => removeBlock(block.id)}
-                      className="text-slate-500 hover:text-red-400 transition"
-                      title="Delete Block"
-                    >
-                      <Trash2 size={10} />
-                    </button>
-                  </div>
-
-                  {/* Input field depending on style */}
-                  <div className="flex-1 mt-1.5">
-                    {block.style === "blockquote" ? (
-                      <div className="border-l-2 border-indigo-500 pl-3">
-                        <textarea
-                          placeholder="Write blockquote content..."
+                    {/* Input field depending on style */}
+                    <div className="flex-1 mt-1.5">
+                      {block.style === "blockquote" ? (
+                        <div className="border-l-2 border-indigo-500 pl-3">
+                          <textarea
+                            placeholder="Write blockquote content..."
+                            value={block.text}
+                            onChange={(e) => updateBlockText(block.id, e.target.value)}
+                            rows={2}
+                            className="w-full bg-transparent text-xs text-slate-300 italic placeholder:text-slate-700 outline-none resize-none"
+                          />
+                        </div>
+                      ) : block.style === "h2" ? (
+                        <input
+                          type="text"
+                          placeholder="Heading 2 Section..."
                           value={block.text}
                           onChange={(e) => updateBlockText(block.id, e.target.value)}
-                          rows={2}
-                          className="w-full bg-transparent text-xs text-slate-300 italic placeholder:text-slate-700 outline-none resize-none"
+                          className="w-full bg-transparent text-base font-black text-white placeholder:text-slate-700 outline-none"
                         />
-                      </div>
-                    ) : block.style === "h2" ? (
-                      <input
-                        type="text"
-                        placeholder="Heading 2 Section..."
-                        value={block.text}
-                        onChange={(e) => updateBlockText(block.id, e.target.value)}
-                        className="w-full bg-transparent text-base font-black text-white placeholder:text-slate-700 outline-none"
-                      />
-                    ) : block.style === "h3" ? (
-                      <input
-                        type="text"
-                        placeholder="Heading 3 Subsection..."
-                        value={block.text}
-                        onChange={(e) => updateBlockText(block.id, e.target.value)}
-                        className="w-full bg-transparent text-sm font-bold text-white placeholder:text-slate-700 outline-none"
-                      />
-                    ) : (
-                      <textarea
-                        placeholder="Write paragraph text here..."
-                        value={block.text}
-                        onChange={(e) => updateBlockText(block.id, e.target.value)}
-                        rows={3}
-                        className="w-full bg-transparent text-xs text-slate-300 leading-relaxed placeholder:text-slate-700 outline-none resize-none"
-                      />
-                    )}
+                      ) : block.style === "h3" ? (
+                        <input
+                          type="text"
+                          placeholder="Heading 3 Subsection..."
+                          value={block.text}
+                          onChange={(e) => updateBlockText(block.id, e.target.value)}
+                          className="w-full bg-transparent text-sm font-bold text-white placeholder:text-slate-700 outline-none"
+                        />
+                      ) : (
+                        <textarea
+                          placeholder="Write paragraph text here..."
+                          value={block.text}
+                          onChange={(e) => updateBlockText(block.id, e.target.value)}
+                          rows={3}
+                          className="w-full bg-transparent text-xs text-slate-300 leading-relaxed placeholder:text-slate-700 outline-none resize-none"
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {blocks.length === 0 && (
-                <div className="py-12 text-center text-xs text-slate-500">
-                  No content blocks. Use the top bar to add a Paragraph or Heading!
-                </div>
-              )}
+                {blocks.length === 0 && (
+                  <div className="py-12 text-center text-xs text-slate-500">
+                    No content blocks. Use the top bar to add a Paragraph or Heading!
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            /* HTML Code Editor */
+            <div className="bg-[#05090f]/75 border border-white/5 p-6 rounded-2xl space-y-4">
+              <div>
+                <h3 className="text-sm font-bold">HTML / Raw Text Editor</h3>
+                <p className="text-[10px] text-slate-500">Write custom HTML or plain text directly. HTML elements are rendered safely on the frontend.</p>
+              </div>
+              <textarea
+                placeholder="<p>Write your HTML or normal text here...</p>"
+                value={htmlContent}
+                onChange={(e) => setHtmlContent(e.target.value)}
+                rows={15}
+                className="w-full bg-[#03060b] border border-white/10 focus:border-indigo-500/60 rounded-xl p-4 text-xs font-mono text-indigo-300 placeholder:text-slate-700 outline-none resize-y min-h-[300px] leading-relaxed custom-scrollbar"
+              />
+            </div>
+          )}
         </div>
 
         {/* SEO Sidebar Previews */}

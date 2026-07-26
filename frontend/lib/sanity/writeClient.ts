@@ -6,10 +6,10 @@ if (typeof window !== "undefined") {
   throw new Error("CRITICAL SECURITY ERROR: Sanity Write Client cannot be instantiated in the browser!");
 }
 
-const writeToken = process.env.SANITY_API_TOKEN || "";
+const writeToken = process.env.SANITY_API_TOKEN || process.env.SANITY_API_WRITE_TOKEN || process.env.SANITY_WRITE_TOKEN || "";
 
 if (!writeToken) {
-  console.warn("WARNING: SANITY_API_TOKEN is not defined in the environment. Write operations will fail.");
+  console.warn("WARNING: Sanity write token (SANITY_API_TOKEN/SANITY_API_WRITE_TOKEN) is not defined in the environment. Write operations will fail.");
 }
 
 export const writeClient = createClient({

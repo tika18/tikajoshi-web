@@ -74,24 +74,29 @@ export default function MediaClient({ initialAssets }: { initialAssets: MediaAss
 
   const uploadFile = async (file: File) => {
     const toastId = toast(`Uploading "${file.name}"...`, "loading");
-    const formData = new FormData();
-    formData.append("file", file);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
-    const res = await uploadMedia(formData);
-    if (res.success && res.asset) {
-      toast("Media uploaded successfully", "success");
-      
-      const newAsset: MediaAsset = {
-        _id: res.asset._id,
-        url: res.asset.url,
-        size: res.asset.size,
-        originalFilename: res.asset.originalFilename,
-        metadata: res.asset.metadata,
-      };
+      const res = await uploadMedia(formData);
+      if (res && res.success && res.asset) {
+        toast("Media uploaded successfully", "success");
+        
+        const newAsset: MediaAsset = {
+          _id: res.asset._id,
+          url: res.asset.url,
+          size: res.asset.size,
+          originalFilename: res.asset.originalFilename,
+          metadata: res.asset.metadata,
+        };
 
-      setAssets((prev) => [newAsset, ...prev]);
-    } else {
-      toast(res.error || "Failed to upload file", "error");
+        setAssets((prev) => [newAsset, ...prev]);
+      } else {
+        toast(res?.error || "Failed to upload file", "error");
+      }
+    } catch (err: any) {
+      console.error("Media upload error:", err);
+      toast(err.message || "Failed to upload media due to network failure", "error");
     }
   };
 
