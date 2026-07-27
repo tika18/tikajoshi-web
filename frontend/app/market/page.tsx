@@ -1179,10 +1179,12 @@ export default function MarketPage() {
                 </div>
               ))}
             </div>
-            {/* Hidden links for SEO partner directories */}
-            <div className="text-[1px] opacity-0 text-transparent select-none pointer-events-none absolute -z-50 w-px h-px overflow-hidden">
-              <a href="https://www.siteswebdirectory.com/Health_Medical/Dentistry/">Dentists Marketing</a>
-              <a href="http://www.qualityinternetdirectory.com/science_and_technology/information_technology/">qualityinternetdirectory</a>
+            {/* Partner Directories (Slightly visible tiny links at bottom of SEO content) */}
+            <div className="mt-6 pt-3 border-t border-white/[0.04] flex flex-wrap gap-2 text-[10px] text-slate-700">
+              <span>Web Directories:</span>
+              <a href="https://www.siteswebdirectory.com/Health_Medical/Dentistry/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-500 transition-colors">Dentists Marketing</a>
+              <span>·</span>
+              <a href="http://www.qualityinternetdirectory.com/science_and_technology/information_technology/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-500 transition-colors">Quality Internet Directory</a>
             </div>
           </div>
         </section>
