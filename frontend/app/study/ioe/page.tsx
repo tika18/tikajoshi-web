@@ -31,11 +31,9 @@ const RESOURCE_TYPES = [
 
 const SEMESTERS = ["1","2","3","4","5","6","7","8"];
 
-type Mode = "entrance" | "bachelor";
 type Uni  = "tu" | "pu";
 
 export default function IOEPage() {
-  const [mode, setMode]             = useState<Mode | null>(null);
   const [uni, setUni]               = useState<Uni | null>(null);
   const [stream, setStream]         = useState<string | null>(null);
   const [resourceType, setResourceType] = useState<string>("notes");
@@ -44,8 +42,9 @@ export default function IOEPage() {
   const [loading, setLoading]       = useState(false);
   const [search, setSearch]         = useState("");
 
+  const mode = "bachelor";
   // which step are we on?
-  const step = !mode ? 0 : !uni ? 1 : !stream ? 2 : 3;
+  const step = !uni ? 1 : !stream ? 2 : 3;
 
   const selectedStream = STREAMS.find(s => s.value === stream);
 
@@ -90,7 +89,7 @@ export default function IOEPage() {
       !search || sub.subjectName?.toLowerCase().includes(search.toLowerCase())
     );
 
-  const reset = () => { setMode(null); setUni(null); setStream(null); setSubjects([]); setSearch(""); };
+  const reset = () => { setUni(null); setStream(null); setSubjects([]); setSearch(""); };
 
   return (
     <div className="min-h-screen bg-[#020917] text-white">
@@ -121,45 +120,19 @@ export default function IOEPage() {
               <span>/</span>
               <Link href="/study" className="hover:text-emerald-400 transition">Study</Link>
               <span>/</span>
-              <span className="text-emerald-400">IOE</span>
-              {mode && <><span>/</span><span className="text-slate-400 capitalize">{mode}</span></>}
+              <span className="text-emerald-400">IOE Exam</span>
               {uni  && <><span>/</span><span className="text-slate-400 uppercase">{uni}</span></>}
-              {stream && <><span>/</span><span className="text-slate-400">{selectedStream?.label}</span></>}
+              {stream && <><span>/</span><span className="text-slate-400">{selectedStream?.label} Notes</span></>}
             </div>
             <h1 className="text-2xl font-black">
-              {step === 0 && "Engineering Resources"}
-              {step === 1 && (mode === "entrance" ? "IOE Entrance Prep" : "Engineering Bachelor")}
-              {step === 2 && "Select University"}
-              {step === 3 && `${selectedStream?.full} — ${RESOURCE_TYPES.find(r=>r.value===resourceType)?.label}`}
+              {step === 1 && "IOE Exam & Notes Hub (TU & PU)"}
+              {step === 2 && `Select Engineering Stream — ${uni?.toUpperCase()}`}
+              {step === 3 && `${selectedStream?.full}: IOE Notes, Syllabus & IOE Question Bank`}
             </h1>
           </div>
         </div>
 
         {/* ══════════════ STEP 0 — Mode Select ══════════════ */}
-        {step === 0 && (
-          <div className="grid md:grid-cols-2 gap-5">
-            {[
-              { key: "entrance" as Mode, emoji: "🚀", title: "IOE Entrance Prep", sub: "Past questions, Model sets, Syllabus", glow: "#f59e0b" },
-              { key: "bachelor" as Mode, emoji: "🎓", title: "Bachelor (4 Years)", sub: "Notes, Question Bank, Lab Manual, Syllabus", glow: "#10b981" },
-            ].map(item => (
-              <button key={item.key} onClick={() => setMode(item.key)}
-                className="group relative text-left p-10 rounded-3xl border border-white/8 bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-300 overflow-hidden hover:-translate-y-1 hover:shadow-2xl"
-                style={{ '--glow': item.glow } as any}>
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ background: `radial-gradient(circle at 30% 50%, ${item.glow}15 0%, transparent 70%)` }} />
-                <div className="relative z-10">
-                  <div className="text-5xl mb-6 group-hover:scale-110 transition-transform duration-300">{item.emoji}</div>
-                  <h2 className="text-2xl font-black text-white mb-2">{item.title}</h2>
-                  <p className="text-slate-400 text-sm">{item.sub}</p>
-                  <div className="mt-6 flex items-center gap-2 text-sm font-bold"
-                    style={{ color: item.glow }}>
-                    Select <span className="group-hover:translate-x-1 transition-transform inline-block">→</span>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* ══════════════ STEP 1 — University ══════════════ */}
         {step === 1 && (
@@ -309,6 +282,79 @@ export default function IOEPage() {
             )}
           </div>
         )}
+
+        {/* SEO FAQs & IOE Exam Guide Section */}
+        <div className="mt-16 border-t border-white/5 pt-12 space-y-12 max-w-4xl mx-auto relative z-20">
+          {/* IOE Exam Results 2082 Banner */}
+          <div className="bg-[#05090f] border border-white/5 p-6 rounded-3xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-transparent pointer-events-none" />
+            <div className="relative z-10 space-y-1.5 text-left">
+              <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[9px] font-black uppercase tracking-wider border border-emerald-500/20">
+                Live Updates
+              </span>
+              <h3 className="text-lg font-black text-white">IOE Exam Result 2082 & IOE Results</h3>
+              <p className="text-xs text-slate-400 leading-relaxed max-w-xl">
+                Get the latest news regarding the IOE entrance result 2082, TU IOE semester exam results, and college notices. Keep checking this page as we sync results instantly!
+              </p>
+            </div>
+            <a 
+              href="https://exam.ioe.edu.np/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5 shadow-lg shadow-emerald-500/10"
+            >
+              Check IOE Results <ExternalLink size={12} />
+            </a>
+          </div>
+
+          {/* SEO Content: How to Pass IOE Exam */}
+          <div className="space-y-4 text-left">
+            <h2 className="text-xl font-black text-white">How to Pass IOE Exam? Proven Strategies</h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="bg-[#040810]/40 border border-white/5 p-5 rounded-2xl space-y-2">
+                <h4 className="text-xs font-black text-emerald-400 uppercase tracking-widest">1. Master the IOE Syllabus & Notes</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Always start by reviewing the official syllabus. Build strong basics using comprehensive <strong>IOE notes</strong>. Focus on key repeating units and theories first.
+                </p>
+              </div>
+              <div className="bg-[#040810]/40 border border-white/5 p-5 rounded-2xl space-y-2">
+                <h4 className="text-xs font-black text-emerald-400 uppercase tracking-widest">2. Solve IOE Old Question Papers</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Regularly practice questions from the <strong>IOE question bank</strong>. Solving the last 10 years of <strong>IOE old question</strong> sets is the single most effective way to understand exam patterns and score high.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* General SEO FAQS */}
+          <div className="space-y-4 text-left">
+            <h2 className="text-xl font-black text-white">Frequently Asked Questions (FAQs)</h2>
+            <div className="divide-y divide-white/5">
+              {[
+                {
+                  q: "Where can I download TU/PU IOE notes and question banks?",
+                  a: "You can download highly detailed IOE notes, IOE old question banks, syllabuses, and lab manuals for all engineering streams (Computer, Civil, Electrical, Electronics, Mechanical, Architecture) directly from our study portal for free."
+                },
+                {
+                  q: "When will the IOE entrance result 2082 be published?",
+                  a: "The IOE entrance result 2082 and IOE exam results for bachelor semesters are published by the IOE Examination Control Division on their official website (exam.ioe.edu.np). We post instant notices and guidelines here once results are live."
+                },
+                {
+                  q: "What is the best way to prepare for the IOE exam?",
+                  a: "To pass the IOE exam, focus on the syllabus, download quality engineering notes, and practice drawing clear diagrams. Practicing with our IOE question bank and solving previous board questions will boost your confidence and speed."
+                }
+              ].map((faq, i) => (
+                <div key={i} className="py-4 first:pt-0 space-y-1.5">
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    {faq.q}
+                  </h4>
+                  <p className="text-xs text-slate-400 leading-relaxed pl-3.5">{faq.a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

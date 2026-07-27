@@ -268,6 +268,112 @@ export async function updateMediaAssetAlt(id: string, altText: string) {
   }
 }
 
+export async function getStudyMaterials() {
+  try {
+    const materials = await writeClient.fetch(
+      `*[_type == "studyMaterial"] | order(subjectName asc, _createdAt desc) {
+        _id,
+        subjectName,
+        subjectCode,
+        category,
+        resourceType,
+        targets,
+        materials,
+        isShared,
+        publishedAt,
+        _createdAt
+      }`
+    );
+    return { success: true, materials };
+  } catch (error: any) {
+    console.error("Error fetching study materials:", error);
+    return { success: false, error: error.message, materials: [] };
+  }
+}
+
+export async function getStudyMaterialById(id: string) {
+  try {
+    const material = await writeClient.fetch(
+      `*[_type == "studyMaterial" && _id == $id][0]`,
+      { id }
+    );
+    return { success: true, material };
+  } catch (error: any) {
+    console.error("Error fetching study material by ID:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function createStudyMaterial(payload: any) {
+  try {
+    const doc = {
+      _type: "studyMaterial",
+      ...payload,
+      publishedAt: payload.publishedAt || new Date().toISOString(),
+    };
+    const res = await writeClient.create(doc);
+    revalidatePath("/study");
+    revalidatePath("/study/ioe");
+    revalidatePath("/study/neb");
+    revalidatePath("/study/license");
+    revalidatePath("/study/loksewa");
+    return { success: true, id: res._id };
+  } catch (error: any) {
+    console.error("Error creating study material:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateStudyMaterial(id: string, payload: any) {
+  try {
+    const res = await writeClient
+      .patch(id)
+      .set(payload)
+      .commit();
+    revalidatePath("/study");
+    revalidatePath("/study/ioe");
+    revalidatePath("/study/neb");
+    revalidatePath("/study/license");
+    revalidatePath("/study/loksewa");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating study material:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteStudyMaterial(id: string) {
+  try {
+    await writeClient.delete(id);
+    revalidatePath("/study");
+    revalidatePath("/study/ioe");
+    revalidatePath("/study/neb");
+    revalidatePath("/study/license");
+    revalidatePath("/study/loksewa");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error deleting study material:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function uploadStudyFile(formData: FormData) {
+  try {
+    const file = formData.get("file") as File;
+    if (!file) throw new Error("No file provided");
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const asset = await writeClient.assets.upload("file", buffer, {
+      filename: file.name,
+      contentType: file.type,
+    });
+    return { success: true, asset };
+  } catch (error: any) {
+    console.error("Error uploading study file:", error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function testSanityConnection() {
   const startTime = Date.now();
   try {

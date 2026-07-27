@@ -20,6 +20,7 @@ import {
   X,
   Database,
   User,
+  GraduationCap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -36,6 +37,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const navItems = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Blog Posts", href: "/admin/blogs", icon: BookOpen },
+    { name: "Study Materials", href: "/admin/study", icon: GraduationCap },
     { name: "Media Library", href: "/admin/media", icon: ImageIcon },
     { name: "System Settings", href: "/admin/settings", icon: Settings },
   ];
@@ -71,9 +73,11 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const filteredShortcuts = [
     { name: "Go to Dashboard", keys: ["g", "d"], href: "/admin" },
     { name: "Manage Blog Posts", keys: ["g", "b"], href: "/admin/blogs" },
+    { name: "Manage Study Materials", keys: ["g", "t"], href: "/admin/study" },
     { name: "Open Media Library", keys: ["g", "m"], href: "/admin/media" },
     { name: "System Settings", keys: ["g", "s"], href: "/admin/settings" },
     { name: "Write New Post", keys: ["n", "p"], href: "/admin/blogs/new" },
+    { name: "Add Study Material", keys: ["n", "t"], href: "/admin/study/new" },
   ].filter((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   // Don't show layout on login page
