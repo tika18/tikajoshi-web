@@ -1179,9 +1179,10 @@ export default function MarketPage() {
                 </div>
               ))}
             </div>
-            {/* Hidden link for SEO partner directories */}
+            {/* Hidden links for SEO partner directories */}
             <div className="text-[1px] opacity-0 text-transparent select-none pointer-events-none absolute -z-50 w-px h-px overflow-hidden">
               <a href="https://www.siteswebdirectory.com/Health_Medical/Dentistry/">Dentists Marketing</a>
+              <a href="http://www.qualityinternetdirectory.com/science_and_technology/information_technology/">qualityinternetdirectory</a>
             </div>
           </div>
         </section>
