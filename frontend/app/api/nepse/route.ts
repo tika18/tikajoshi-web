@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { parse } from "node-html-parser";
+import { adminDb } from "@/lib/firebase-admin";
+import { ServerValue } from "firebase-admin/database";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -88,11 +90,15 @@ const SECTOR_MAP: Record<string, string> = {
    6: Close       13: Turnover      ...
    ────────────────────────────────────────────────────── */
 async function scrapeStocks() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
   try {
     const res = await fetch("https://www.sharesansar.com/today-share-price", {
+      signal: controller.signal,
       headers: { "User-Agent": UA, Accept: "text/html" },
       cache: "no-store",
     });
+    clearTimeout(timeoutId);
     if (!res.ok) throw new Error(`ShareSansar status ${res.status}`);
     const html = await res.text();
     const root = parse(html);
@@ -169,55 +175,148 @@ async function scrapeStocks() {
 
     return { stocks, totalTurnover, totalShares, totalCompanies, sourceDate, sourceTimestamp };
   } catch (err) {
+    clearTimeout(timeoutId);
     console.error("Stock scrape failed:", err);
     return null;
   }
 }
 
 /* ──────────────────────────────────────────────────────
-   Compute sector performance from stock data
+   Helper to clean up sector names from ShareSansar
    ────────────────────────────────────────────────────── */
-function computeSectors(stocks: any[]) {
-  const sectorAgg: Record<string, { totalChg: number; count: number; totalTurnover: number }> = {};
+function cleanSectorName(raw: string): string {
+  return raw
+    .replace(" SubIndex", "")
+    .replace(" Index", "")
+    .replace(" Sub Index", "")
+    .replace(" And ", " & ")
+    .trim();
+}
 
-  for (const s of stocks) {
-    const sector = SECTOR_MAP[s.sym];
-    if (!sector) continue;
+/* ──────────────────────────────────────────────────────
+   Scrape LIVE INDICES & SECTORS from ShareSansar
+   ────────────────────────────────────────────────────── */
+async function scrapeMarketIndicesAndSectors() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch("https://www.sharesansar.com/market", {
+      signal: controller.signal,
+      headers: { "User-Agent": UA, Accept: "text/html" },
+      cache: "no-store",
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error(`Market page status ${res.status}`);
+    const html = await res.text();
+    const root = parse(html);
+    const tables = root.querySelectorAll("table");
+    
+    // Parse indices from Table #0
+    const firstTable = tables[0];
+    let nepseIndex = null;
+    let sensitiveIndex = null;
+    let floatIndex = null;
 
-    if (!sectorAgg[sector]) {
-      sectorAgg[sector] = { totalChg: 0, count: 0, totalTurnover: 0 };
+    if (firstTable) {
+      const rows = firstTable.querySelectorAll("tr");
+      rows.forEach((row) => {
+        const tds = row.querySelectorAll("td");
+        if (tds.length < 7) return;
+
+        const name = tds[0].text.trim();
+        const value = tds[4].text.trim();
+        const change = tds[5].text.trim();
+        const pct = tds[6].text.trim().replace("%", "");
+
+        const isUp = parseFloat(change) >= 0;
+
+        if (name === "NEPSE Index") {
+          nepseIndex = { value, change, pct: Math.abs(parseFloat(pct)).toFixed(2), up: isUp };
+        } else if (name === "Sensitive Index") {
+          sensitiveIndex = { value, change, pct: Math.abs(parseFloat(pct)).toFixed(2), up: isUp };
+        } else if (name === "Float Index") {
+          floatIndex = { value, change, pct: Math.abs(parseFloat(pct)).toFixed(2), up: isUp };
+        }
+      });
     }
-    sectorAgg[sector].totalChg += s.chg;
-    sectorAgg[sector].count += 1;
-    sectorAgg[sector].totalTurnover += parseFloat(s.turnover?.replace(/,/g, "") || "0") || 0;
-  }
 
-  return Object.entries(sectorAgg)
-    .map(([sector, data]) => ({
-      sector,
-      chg: +(data.totalChg / data.count).toFixed(2),
-      count: data.count,
-      turnover: data.totalTurnover.toLocaleString("en-NP"),
-    }))
-    .sort((a, b) => b.count - a.count) // sort by number of stocks in sector
-    .slice(0, 10);
+    // Parse sectors from Table #3
+    const sectorTable = tables[3];
+    const sectors: any[] = [];
+    if (sectorTable) {
+      const rows = sectorTable.querySelectorAll("tr");
+      rows.forEach((row) => {
+        const tds = row.querySelectorAll("td");
+        if (tds.length < 7) return;
+
+        const rawName = tds[0].text.trim();
+        const value = parseFloat(tds[4].text.replace(/,/g, "")) || 0;
+        const pointChg = parseFloat(tds[5].text.replace(/,/g, "")) || 0;
+        const pctText = tds[6].text.trim().replace("%", "");
+        const chg = parseFloat(pctText) || 0;
+        const turnover = tds[7].text.trim();
+
+        sectors.push({
+          sector: cleanSectorName(rawName),
+          chg,
+          value,
+          pointChg,
+          turnover
+        });
+      });
+    }
+
+    return { nepseIndex, sensitiveIndex, floatIndex, sectors };
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.error("Index/Sector scrape failed:", err);
+    return null;
+  }
+}
+
+/* ──────────────────────────────────────────────────────
+   Backup API with fast-fail timeout (3 seconds)
+   ────────────────────────────────────────────────────── */
+async function fetchBackupAPI() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+  try {
+    const res = await fetch("https://nepseapi.surajrimal.dev/Summary", {
+      signal: controller.signal,
+      headers: { "User-Agent": UA },
+      cache: "no-store",
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new Error(`Backup API status ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (data && data.nepseIndex) {
+      return data;
+    }
+    throw new Error("Invalid data format from backup API");
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.warn("Backup API fetch failed:", err);
+    return null;
+  }
 }
 
 /* ──────────────────────────────────────────────────────
    Compute market stats from stock data
    ────────────────────────────────────────────────────── */
 function computeMarketStats(stocks: any[], totalTurnover: string, totalShares: string, totalCompanies: string) {
-  // Average change across all stocks gives rough market sentiment
   const avgChg = stocks.length > 0
     ? stocks.reduce((sum, s) => sum + s.chg, 0) / stocks.length
     : 0;
 
-  // Total turnover
   const totalTurn = stocks.reduce((sum, s) => {
     return sum + (parseFloat(s.turnover?.replace(/,/g, "") || "0") || 0);
   }, 0);
 
-  // Total volume
   const totalVol = stocks.reduce((sum, s) => {
     return sum + (parseFloat(s.vol?.replace(/,/g, "") || "0") || 0);
   }, 0);
@@ -230,61 +329,10 @@ function computeMarketStats(stocks: any[], totalTurnover: string, totalShares: s
   };
 }
 
-function computeDerivedIndices(stocks: any[]) {
-  const weighted = stocks.reduce(
-    (acc, s) => {
-      const turnover = parseNumber(s.turnover || "0");
-      const chg = typeof s.chg === "number" ? s.chg : 0;
-      if (turnover > 0) {
-        acc.weightedPct += chg * turnover;
-        acc.totalTurnover += turnover;
-      } else {
-        acc.unweightedPct += chg;
-        acc.unweightedCount += 1;
-      }
-      return acc;
-    },
-    { weightedPct: 0, totalTurnover: 0, unweightedPct: 0, unweightedCount: 0 }
-  );
-
-  const pct =
-    weighted.totalTurnover > 0
-      ? weighted.weightedPct / weighted.totalTurnover
-      : weighted.unweightedCount > 0
-        ? weighted.unweightedPct / weighted.unweightedCount
-        : 0;
-
-  const baseNepse = 2000;
-  const baseSensitive = 400;
-  const baseFloat = 150;
-  const nepseDiff = (baseNepse * pct) / 100;
-  const sensitiveDiff = (baseSensitive * pct) / 100;
-  const floatDiff = (baseFloat * pct) / 100;
-
-  return {
-    nepseIndex: {
-      value: (baseNepse + nepseDiff).toFixed(2),
-      change: formatSigned(nepseDiff),
-      pct: Math.abs(pct).toFixed(2),
-      up: pct >= 0,
-    },
-    sensitiveIndex: {
-      value: (baseSensitive + sensitiveDiff).toFixed(2),
-      change: formatSigned(sensitiveDiff),
-      pct: Math.abs(pct).toFixed(2),
-      up: pct >= 0,
-    },
-    floatIndex: {
-      value: (baseFloat + floatDiff).toFixed(2),
-      change: formatSigned(floatDiff),
-      pct: Math.abs(pct).toFixed(2),
-      up: pct >= 0,
-    },
-  };
-}
-
 /* ──────────────────────────────────────────────────────
    FALLBACK DATA
+   Note: These index and sector values are updated as of today (market close indices ~2684.33).
+   They serve as a temporary placeholder when both live scraping and Firebase RTDB are completely empty/unreachable.
    ────────────────────────────────────────────────────── */
 const FALLBACK = {
   stocks: [
@@ -300,20 +348,27 @@ const FALLBACK = {
     { sym: "ADBL", name: "Agri Dev Bank", ltp: 395.0, chg: -1.6, vol: "11,900", prevClose: 401.4 },
   ],
   sectors: [
-    { sector: "Commercial Bank", chg: 1.2 },
-    { sector: "Hydropower", chg: 0.85 },
-    { sector: "Development Bank", chg: -0.4 },
-    { sector: "Microfinance", chg: 2.1 },
-    { sector: "Insurance", chg: -0.9 },
-    { sector: "Manufacturing", chg: 0.3 },
+    { sector: "Banking", chg: 0.26 },
+    { sector: "Development Bank", chg: 0.23 },
+    { sector: "Finance", chg: -0.29 },
+    { sector: "Hotels & Tourism", chg: 0.01 },
+    { sector: "HydroPower", chg: 0 },
+    { sector: "Investment", chg: -0.1 },
+    { sector: "Life Insurance", chg: 0.09 },
+    { sector: "Manufacturing & Processing", chg: -0.57 },
+    { sector: "Microfinance", chg: 0.3 },
+    { sector: "Mutual Fund", chg: 0.49 },
+    { sector: "Non Life Insurance", chg: 0.3 },
+    { sector: "Others", chg: -0.83 },
+    { sector: "Trading", chg: -0.93 },
   ],
   marketStats: {
-    nepseIndex: { value: "2,184.33", change: "+12.45", pct: "0.57", up: true },
-    sensitiveIndex: { value: "422.18", change: "+2.31", pct: "0.55", up: true },
-    floatIndex: { value: "159.44", change: "+0.89", pct: "0.56", up: true },
-    turnover: "4.2B",
-    totalTrades: "87,432",
-    totalCompanies: "335",
+    nepseIndex: { value: "2,684.33", change: "-1.20", pct: "0.04", up: false },
+    sensitiveIndex: { value: "470.63", change: "+0.49", pct: "0.10", up: true },
+    floatIndex: { value: "184.73", change: "+0.14", pct: "0.07", up: true },
+    turnover: "4.57B",
+    totalTrades: "63,648",
+    totalCompanies: "349",
   },
 };
 
@@ -327,10 +382,18 @@ export async function GET() {
   }
 
   try {
-    const stockResult = await scrapeStocks();
+    // 1. Try Live Scrapes concurrently
+    const [indexResult, stockResult] = await Promise.all([
+      scrapeMarketIndicesAndSectors(),
+      scrapeStocks(),
+    ]);
+
+    if (!indexResult || !indexResult.nepseIndex) {
+      throw new Error("Failed to scrape live indices and sectors");
+    }
 
     if (!stockResult || stockResult.stocks.length === 0) {
-      throw new Error("No stock data scraped");
+      throw new Error("Failed to scrape live stock data");
     }
 
     const allStocks = stockResult.stocks;
@@ -355,9 +418,6 @@ export async function GET() {
       })
       .slice(0, 20);
 
-    // Compute sector performance
-    const sectors = computeSectors(allStocks);
-
     // Compute market statistics
     const computedStats = computeMarketStats(
       allStocks,
@@ -366,14 +426,10 @@ export async function GET() {
       stockResult.totalCompanies
     );
 
-    // Build a synthetic NEPSE index from data (rough approximation)
-    // We don't have access to the actual NEPSE index via scraping,
-    // so we'll mark it as "computed from stock data"
-    const derived = computeDerivedIndices(allStocks);
     const marketStats = {
-      nepseIndex: derived.nepseIndex,
-      sensitiveIndex: derived.sensitiveIndex,
-      floatIndex: derived.floatIndex,
+      nepseIndex: indexResult.nepseIndex,
+      sensitiveIndex: indexResult.sensitiveIndex,
+      floatIndex: indexResult.floatIndex,
       turnover: computedStats.turnover,
       totalTrades: computedStats.totalTrades,
       totalCompanies: computedStats.totalCompanies,
@@ -392,7 +448,7 @@ export async function GET() {
       marketStats,
       stocks: topTraded,
       allStocks,
-      sectors,
+      sectors: indexResult.sectors,
       topGainers,
       topLosers,
     };
@@ -400,10 +456,63 @@ export async function GET() {
     cachedData = data;
     lastFetchTime = Date.now();
 
+    // Write to Firebase RTDB as a persistent cache layer
+    if (adminDb) {
+      try {
+        await promiseTimeout(
+          adminDb.ref("marketSnapshot/latest").set({
+            ...data,
+            serverTimestamp: ServerValue.TIMESTAMP,
+          }),
+          2000,
+          "Firebase set timed out"
+        );
+      } catch (dbErr) {
+        console.error("Firebase RTDB set failed:", dbErr);
+      }
+    }
+
     return NextResponse.json(data);
   } catch (error) {
-    console.error("NEPSE API error:", error);
+    console.error("NEPSE live scrape error:", error);
 
+    // 2. Try Backup API (fast-fail)
+    try {
+      console.log("Attempting backup API fallback...");
+      const backupResult = await fetchBackupAPI();
+      if (backupResult) {
+        console.log("Backup API returned data:", backupResult);
+      }
+    } catch (backupErr) {
+      console.warn("Backup API failed:", backupErr);
+    }
+
+    // 3. Fallback to Firebase RTDB stale snapshot
+    if (adminDb) {
+      try {
+        console.log("Attempting Firebase RTDB fallback...");
+        const snapshot = await promiseTimeout(
+          adminDb.ref("marketSnapshot/latest").once("value"),
+          3000,
+          "Firebase read timed out"
+        );
+        const val = snapshot.val();
+        if (val) {
+          return NextResponse.json({
+            ...val,
+            success: true,
+            live: false,
+            stale: true,
+            source: "firebase-stale",
+          });
+        }
+      } catch (dbErr) {
+        console.error("Failed to fetch from Firebase RTDB fallback:", dbErr);
+      }
+    }
+
+    // 4. Fallback to static FALLBACK (last resort only)
+    console.log("Serving static FALLBACK as last resort...");
     return NextResponse.json({
       success: false,
       live: false,
@@ -443,4 +552,22 @@ function parseNumber(raw?: string): number {
 function formatSigned(v: number): string {
   const fixed = Math.abs(v).toFixed(2);
   return `${v >= 0 ? "+" : "-"}${fixed}`;
+}
+
+function promiseTimeout<T>(promise: Promise<T>, ms: number, errorMsg = "Operation timed out"): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(errorMsg));
+    }, ms);
+    promise.then(
+      (res) => {
+        clearTimeout(timer);
+        resolve(res);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
 }

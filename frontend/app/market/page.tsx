@@ -1,13 +1,19 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
-import StockPredictor from "@/components/StockPredictor";
-import SipCalculator from "@/components/SipCalculator";
-import ShareAdjustmentCalculator from "@/components/ShareAdjustmentCalculator";
-import WaccCalculator from "@/components/WaccCalculator";
-import PivotCalculator from "@/components/PivotCalculator";
+import StockPredictorOriginal from "@/components/StockPredictor";
+import SipCalculatorOriginal from "@/components/SipCalculator";
+import ShareAdjustmentCalculatorOriginal from "@/components/ShareAdjustmentCalculator";
+import WaccCalculatorOriginal from "@/components/WaccCalculator";
+import PivotCalculatorOriginal from "@/components/PivotCalculator";
+
+const StockPredictor = memo(StockPredictorOriginal);
+const SipCalculator = memo(SipCalculatorOriginal);
+const ShareAdjustmentCalculator = memo(ShareAdjustmentCalculatorOriginal);
+const WaccCalculator = memo(WaccCalculatorOriginal);
+const PivotCalculator = memo(PivotCalculatorOriginal);
 import {
   TrendingUp, TrendingDown, ExternalLink, Maximize2, X,
   Star, RefreshCw, Calculator, DollarSign, BarChart2,
@@ -98,7 +104,7 @@ function Skeleton({ className = "" }: { className?: string }) {
 }
 
 /* ─────────────── EMI CALCULATOR ─────────────── */
-function EmiCalculator() {
+const EmiCalculator = memo(function EmiCalculator() {
   const [loan,   setLoan]   = useState(1000000);
   const [rate,   setRate]   = useState(12);
   const [tenure, setTenure] = useState(5);
@@ -180,10 +186,10 @@ function EmiCalculator() {
       </div>
     </div>
   );
-}
+});
 
 /* ─────────────── FOREX WIDGET ─────────────── */
-function ForexWidget() {
+const ForexWidget = memo(function ForexWidget() {
   const [rates, setRates]     = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [updated, setUpdated] = useState("");
@@ -261,7 +267,7 @@ function ForexWidget() {
       </p>
     </div>
   );
-}
+});
 
 /* ─────────────── MARKET STATUS & TIMING ─────────────── */
 function MarketStatus() {
@@ -537,6 +543,11 @@ export default function MarketPage() {
   const [lastUpdated, setLastUpdated] = useState("");
   const [sourceUpdated, setSourceUpdated] = useState("");
   const [blogs, setBlogs] = useState<any[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Fetch target page blogs
   useEffect(() => {
@@ -606,592 +617,628 @@ export default function MarketPage() {
         {
           label: "NEPSE Index",
           value: data.marketStats.nepseIndex.value,
-          change: `${data.marketStats.nepseIndex.change} (${data.marketStats.nepseIndex.pct}%)`,
-          up: data.marketStats.nepseIndex.up,
-        },
-        {
-          label: "Sensitive Idx",
-          value: data.marketStats.sensitiveIndex.value,
-          change: `${data.marketStats.sensitiveIndex.change} (${data.marketStats.sensitiveIndex.pct}%)`,
-          up: data.marketStats.sensitiveIndex.up,
-        },
-        {
-          label: "Float Index",
-          value: data.marketStats.floatIndex.value,
-          change: `${data.marketStats.floatIndex.change} (${data.marketStats.floatIndex.pct}%)`,
-          up: data.marketStats.floatIndex.up,
-        },
-        { label: "Turnover",     value: `Rs ${data.marketStats.turnover}`, change: "Today", up: null },
-        { label: "Traded Shares", value: data.marketStats.totalTrades,     change: "Shares", up: null },
-        { label: "Companies",    value: data.marketStats.totalCompanies,   change: "Traded", up: null },
-      ]
-    : [];
+                  change: `${data.marketStats.nepseIndex.change} (${data.marketStats.nepseIndex.pct}%)`,
+                  up: data.marketStats.nepseIndex.up,
+                },
+                {
+                  label: "Sensitive Idx",
+                  value: data.marketStats.sensitiveIndex.value,
+                  change: `${data.marketStats.sensitiveIndex.change} (${data.marketStats.sensitiveIndex.pct}%)`,
+                  up: data.marketStats.sensitiveIndex.up,
+                },
+                {
+                  label: "Float Index",
+                  value: data.marketStats.floatIndex.value,
+                  change: `${data.marketStats.floatIndex.change} (${data.marketStats.floatIndex.pct}%)`,
+                  up: data.marketStats.floatIndex.up,
+                },
+                { label: "Turnover",     value: `Rs ${data.marketStats.turnover}`, change: "Today", up: null },
+                { label: "Traded Shares", value: data.marketStats.totalTrades,     change: "Shares", up: null },
+                { label: "Companies",    value: data.marketStats.totalCompanies,   change: "Traded", up: null },
+              ]
+            : [];
 
-  return (
-    <div className="min-h-screen bg-[#020817] text-white">
-      <Navbar />
+          return (
+            <div className="min-h-screen bg-[#020817] text-white">
+              <Navbar />
 
-      <div className="max-w-7xl mx-auto py-20 sm:py-24 px-4 sm:px-6">
+              <div className="max-w-7xl mx-auto py-20 sm:py-24 px-4 sm:px-6">
 
-        {/* ── PAGE HERO ── */}
-        <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 flex-wrap mb-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[11px] font-bold text-emerald-400 uppercase tracking-widest">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                {data?.live ? "Live Market Data" : "Market Data"}
-              </div>
-              {data?.live && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-400 font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Real-time from ShareSansar
-                </div>
-              )}
-              {data && !data.live && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-400 font-medium">
-                  <WifiOff size={10} />
-                  Fallback data
-                </div>
-              )}
-            </div>
-            
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-3">
-              NEPSE Share Market <span className="text-emerald-400">Live</span>
-            </h1>
-            
-            <div className="flex items-center justify-between flex-wrap gap-3 max-w-2xl">
-              <p className="text-slate-400 text-base sm:text-lg leading-relaxed">
-                Nepal Stock Exchange live index, top stocks, forex rates, EMI calculator — सबै एकै ठाउँमा। Free, real-time, no login required.
-              </p>
-              
-              <div className="flex items-center gap-3 mt-2 sm:mt-0">
-                {lastUpdated && (
-                  <div className="text-[11px] text-slate-500 flex flex-col items-end">
-                    <span className="flex items-center gap-1">
-                      <Clock size={11} /> Updated: {lastUpdated}
-                    </span>
-                    {sourceUpdated && (
-                      <span className="text-[10px] text-slate-600">Source: {sourceUpdated}</span>
+                {/* ══════════════════════════════════════════
+                    ZONE 1 — LIVE MARKET OVERVIEW
+                ══════════════════════════════════════════ */}
+                <section className="mb-12">
+
+                  {/* ── PAGE HERO ── */}
+                  <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 flex-wrap mb-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[11px] font-bold text-emerald-400 uppercase tracking-widest">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          {data?.live ? "Live Market Data" : "Market Data"}
+                        </div>
+                        {data?.live && (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-400 font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Real-time from ShareSansar
+                          </div>
+                        )}
+                        {data && !data.live && (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-400 font-medium">
+                            <WifiOff size={10} />
+                            Fallback data
+                          </div>
+                        )}
+                      </div>
+
+                      <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-3">
+                        NEPSE Share Market <span className="text-emerald-400">Live</span>
+                      </h1>
+
+                      <div className="flex items-center justify-between flex-wrap gap-3 max-w-2xl">
+                        <p className="text-slate-400 text-base sm:text-lg leading-relaxed">
+                          Nepal Stock Exchange live index, top stocks, forex rates, EMI calculator — सबै एकै ठाउँमा। Free, real-time, no login required.
+                        </p>
+
+                        <div className="flex items-center gap-3 mt-2 sm:mt-0">
+                          {lastUpdated && (
+                            <div className="text-[11px] text-slate-500 flex flex-col items-end">
+                              <span className="flex items-center gap-1">
+                                <Clock size={11} /> Updated: {lastUpdated}
+                              </span>
+                              {sourceUpdated && (
+                                <span className="text-[10px] text-slate-600">Source: {sourceUpdated}</span>
+                              )}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => fetchData(true)}
+                            disabled={refreshing}
+                            className="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 active:scale-95 px-3 py-1.5 rounded-lg transition-all border border-slate-700/50 disabled:opacity-50"
+                          >
+                            <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
+                            {refreshing ? "Refreshing…" : "Refresh"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 w-full md:w-auto mt-2 md:mt-0">
+                      <MarketStatus />
+                    </div>
+                  </div>
+
+                  {/* ── MARKET STATS STRIP ── */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+                    {loading ? (
+                      Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="bg-[#0a0f1d] border border-slate-800/80 rounded-xl px-4 py-3.5 shadow-sm">
+                          <Skeleton className="h-3 w-20 mb-2" />
+                          <Skeleton className="h-5 w-24 mb-2" />
+                          <Skeleton className="h-3 w-16" />
+                        </div>
+                      ))
+                    ) : (
+                      statsItems.map((s, i) => (
+                        <div key={i}
+                          className="bg-[#0a0f1d] border border-slate-800/80 rounded-xl px-4 py-3.5 hover:border-slate-700/60 transition-all shadow-sm"
+                        >
+                          <div className="text-[10px] text-slate-400 mb-1 font-semibold uppercase tracking-wider">{s.label}</div>
+                          <div className="text-lg font-black text-white leading-none mb-1">{s.value}</div>
+                          <div className={`text-[11px] font-bold ${
+                            s.up === true ? "text-emerald-400" :
+                            s.up === false ? "text-red-400" : "text-slate-500"
+                          }`}>
+                            {s.up === true && "▲ "}{s.up === false && "▼ "}{s.change}
+                          </div>
+                        </div>
+                      ))
                     )}
                   </div>
-                )}
-                <button
-                  onClick={() => fetchData(true)}
-                  disabled={refreshing}
-                  className="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 active:scale-95 px-3 py-1.5 rounded-lg transition-all border border-slate-700/50 disabled:opacity-50"
-                >
-                  <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
-                  {refreshing ? "Refreshing…" : "Refresh"}
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <div className="shrink-0 w-full md:w-auto mt-2 md:mt-0">
-            <MarketStatus />
-          </div>
-        </div>
 
-        {/* Tab Selector */}
-        <div className="flex gap-2 bg-white/[0.03] border border-white/10 p-1 rounded-xl mb-8 max-w-sm">
-          <button
-            onClick={() => setActiveTab("market")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition ${
-              activeTab === "market" ? "bg-emerald-600 text-white" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <BarChart2 size={14} /> Live Dashboard
-          </button>
-          <button
-            onClick={() => setActiveTab("news")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition ${
-              activeTab === "news" ? "bg-emerald-600 text-white" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <BlogIcon size={14} /> News & Blogs
-          </button>
-        </div>
-
-        {/* ── MARKET STATS STRIP ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
-          {loading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-[#0d1520] border border-slate-700/40 rounded-xl px-4 py-3">
-                <Skeleton className="h-3 w-20 mb-2" />
-                <Skeleton className="h-5 w-24 mb-2" />
-                <Skeleton className="h-3 w-16" />
-              </div>
-            ))
-          ) : (
-            statsItems.map((s, i) => (
-              <div key={i}
-                className="bg-[#0d1520] border border-slate-700/40 rounded-xl px-4 py-3 hover:border-slate-600/60 transition-colors"
-              >
-                <div className="text-[11px] text-slate-500 mb-1 font-medium">{s.label}</div>
-                <div className="text-base font-black text-white leading-none mb-1">{s.value}</div>
-                <div className={`text-[11px] font-semibold ${
-                  s.up === true ? "text-emerald-400" :
-                  s.up === false ? "text-red-400" : "text-slate-500"
-                }`}>
-                  {s.up === true && "▲ "}{s.up === false && "▼ "}{s.change}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {activeTab === "market" ? (
-          <>
-            {/* ── LIVE MARKET TAPE ── */}
-        {data && (data.topGainers.length > 0 || data.topLosers.length > 0) && (
-          <div className="mb-10 rounded-2xl border border-slate-700/50 bg-[#0d1520] p-4 sm:p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <h3 className="text-sm font-black tracking-wide uppercase text-slate-200">Live Market Tape</h3>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {data.topGainers.slice(0, 6).map((s) => (
-                <button
-                  key={`g-${s.sym}`}
-                  onClick={() => {
-                    setChartSymbol(s.sym);
-                    document.getElementById("nepse-chart-view")?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-colors"
-                >
-                  {s.sym} +{s.chg.toFixed(2)}%
-                </button>
-              ))}
-              {data.topLosers.slice(0, 4).map((s) => (
-                <button
-                  key={`l-${s.sym}`}
-                  onClick={() => {
-                    setChartSymbol(s.sym);
-                    document.getElementById("nepse-chart-view")?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  className="rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 hover:bg-red-500/20 transition-colors"
-                >
-                  {s.sym} {s.chg.toFixed(2)}%
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── IPO HIGHLIGHT ── */}
-        <div className="bg-gradient-to-r from-emerald-900/35 to-blue-900/35 border border-emerald-500/25 p-5 sm:p-6 rounded-2xl mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-4">
-            <div className="bg-emerald-500 p-3 rounded-xl shrink-0">
-              <Star fill="white" size={22} />
-            </div>
-            <div>
-              <h2 className="text-lg font-black text-white">IPO / Mero Share</h2>
-              <p className="text-emerald-300 text-sm mt-0.5">Apply for IPO र result check गर्नुस् — directly CDSC bata।</p>
-            </div>
-          </div>
-          <div className="flex gap-3 w-full sm:w-auto">
-            <a href="https://iporesult.cdsc.com.np/" target="_blank"
-              className="flex-1 sm:flex-none text-center bg-emerald-600 hover:bg-emerald-500 active:scale-95 px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-emerald-900/30">
-              Check IPO Result
-            </a>
-            <a href="https://meroshare.cdsc.com.np/" target="_blank"
-              className="flex-1 sm:flex-none text-center bg-blue-600 hover:bg-blue-500 active:scale-95 px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-900/30">
-              Mero Share
-            </a>
-          </div>
-        </div>
-
-        {/* ── AI PREDICTOR ── */}
-        <div className="mb-10">
-          <StockPredictor stocks={data?.stocks || []} />
-        </div>
-
-        {/* ── LIVE CHART ── */}
-        <div id="nepse-chart-view" className="mb-10 scroll-mt-24">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 mb-5">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2">
-                <TrendingUp className="text-emerald-500" size={26} /> {chartSymbol === "NEPSE" ? "NEPSE Live" : `${chartSymbol} `} Chart
-              </h2>
-              <p className="text-slate-400 text-sm mt-1">Real-time candlestick chart — nepsealpha.com powered</p>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {chartSymbol !== "NEPSE" && (
-                <button onClick={() => setChartSymbol("NEPSE")}
-                  className="flex items-center gap-2 text-sm bg-violet-600/20 text-violet-400 hover:bg-violet-600 hover:text-white active:scale-95 px-4 py-2 rounded-xl transition-all border border-violet-500/30">
-                  <RefreshCw size={15} /> Back to NEPSE
-                </button>
-              )}
-              <button 
-                onClick={toggleFullScreen}
-                className="flex items-center gap-2 text-sm bg-slate-800 hover:bg-slate-700 active:scale-95 px-4 py-2 rounded-xl transition-all border border-slate-700/50">
-                <Maximize2 size={15} /> Full Screen
-              </button>
-            </div>
-          </div>
-
-          <div 
-            ref={chartContainerRef}
-            className={`bg-[#1e293b] border ${fullScreen ? "border-none" : "border-slate-700"} overflow-hidden shadow-2xl relative transition-all duration-300 ${
-            fullScreen ? "w-full h-full bg-white p-0 m-0" : "rounded-3xl h-[480px] sm:h-[580px] lg:h-[700px]"
-          }`}>
-            {fullScreen && (
-              <button onClick={toggleFullScreen}
-                className="absolute top-4 right-4 bg-red-600 text-white p-3 rounded-full z-[110] hover:bg-red-500 shadow-2xl backdrop-blur-sm border border-red-400/30">
-                <X size={24} />
-              </button>
-            )}
-            <div className="w-full h-full relative bg-white">
-              <iframe
-                key={chartSymbol}
-                src={`https://nepsealpha.com/trading/chart?symbol=${chartSymbol}`}
-                className="absolute top-0 left-0 w-full h-full border-none pointer-events-auto"
-                style={fullScreen ? undefined : { filter: "hue-rotate(180deg) invert(0.92) contrast(0.85)" }} // Keep dark theme only in non-fullscreen for better UI inside the panel
-                title={`${chartSymbol} Live Chart`}
-                loading="lazy"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* ── STOCK TABLE + SECTOR ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-          <div className="lg:col-span-2">
-            <StockTable
-              stocks={data?.stocks || []}
-              loading={loading}
-              onStockClick={(sym) => {
-                setChartSymbol(sym);
-                document.getElementById('nepse-chart-view')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            />
-          </div>
-          <div>
-            <SectorChart
-              sectors={data?.sectors || []}
-              loading={loading}
-            />
-          </div>
-        </div>
-
-        {/* ── TOP GAINERS / LOSERS ── */}
-        {data && (data.topGainers.length > 0 || data.topLosers.length > 0) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-            {/* Top Gainers */}
-            {data.topGainers.length > 0 && (
-              <div className="bg-[#0d1520] border border-slate-700/50 rounded-2xl p-5 sm:p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <ArrowUpRight size={18} className="text-emerald-400" />
-                  <h3 className="font-black text-white text-base sm:text-lg">Top Gainers 🚀</h3>
-                </div>
-                <div className="space-y-2">
-                  {data.topGainers.slice(0, 5).map((s, i) => (
-                    <div key={i} className="flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05] rounded-xl px-3 py-2.5 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-black flex items-center justify-center">{i + 1}</span>
-                        <span className="font-bold text-white text-sm">{s.sym}</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-bold text-white">{s.ltp?.toFixed(2)}</div>
-                        <div className="text-[11px] font-bold text-emerald-400">+{s.chg?.toFixed(2)}%</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Top Losers */}
-            {data.topLosers.length > 0 && (
-              <div className="bg-[#0d1520] border border-slate-700/50 rounded-2xl p-5 sm:p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <ArrowDownRight size={18} className="text-red-400" />
-                  <h3 className="font-black text-white text-base sm:text-lg">Top Losers 📉</h3>
-                </div>
-                <div className="space-y-2">
-                  {data.topLosers.slice(0, 5).map((s, i) => (
-                    <div key={i} className="flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05] rounded-xl px-3 py-2.5 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 rounded-full bg-red-500/20 text-red-400 text-[10px] font-black flex items-center justify-center">{i + 1}</span>
-                        <span className="font-bold text-white text-sm">{s.sym}</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-bold text-white">{s.ltp?.toFixed(2)}</div>
-                        <div className="text-[11px] font-bold text-red-400">{s.chg?.toFixed(2)}%</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── TOOLS: EMI + FOREX ── */}
-        <div className="mb-10">
-          <h2 className="text-xl sm:text-2xl font-black text-white mb-5 flex items-center gap-2">
-            <DollarSign size={22} className="text-cyan-400" /> Financial Tools
-          </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <EmiCalculator />
-            <ForexWidget />
-            <SipCalculator />
-            <ShareAdjustmentCalculator />
-            <WaccCalculator />
-            <PivotCalculator />
-          </div>
-        </div>
-
-        {/* ── QUICK LINKS ── */}
-        <div className="mb-12">
-          <h2 className="text-xl sm:text-2xl font-black text-white mb-5">Market Resources</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {QUICK_LINKS.map((item, i) => (
-              <a key={i} href={item.link} target="_blank"
-                className={`p-4 sm:p-5 bg-[#0d1520]/80 border ${item.color} rounded-2xl hover:bg-[#1a2535] active:scale-[0.98] transition-all group flex items-center justify-between`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl leading-none">{item.icon}</span>
-                  <span className="font-bold text-sm text-slate-200 group-hover:text-white transition-colors">
-                    {item.name}
-                  </span>
-                </div>
-                <ExternalLink size={15} className="text-slate-600 group-hover:text-white transition-colors shrink-0" />
-              </a>
-            ))}
-          </div>
-        </div>
-
-        {/* Dynamic Placement Blogs */}
-        {blogs.length > 0 && (
-          <div className="mb-12 border-t border-slate-800 pt-12">
-            <div className="flex items-center gap-3 mb-8">
-              <BlogIcon className="text-emerald-400" />
-              <h2 className="text-2xl font-black text-white uppercase tracking-wider">
-                Market Insights & Technical Guides
-              </h2>
-            </div>
-            <div className="grid md:grid-cols-3 gap-6">
-              {blogs.map((blog) => (
-                <Link
-                  key={blog._id}
-                  href={`/market/${blog.slug}`}
-                  className="group bg-[#0d1520] border border-slate-800 hover:border-emerald-500/30 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
-                >
-                  <div className="relative h-44 bg-slate-900">
-                    <Image
-                      src={blog.imageUrl || "/og-image.jpg"}
-                      alt={blog.title}
-                      fill
-                      className="object-cover opacity-60 group-hover:opacity-85 transition-opacity"
-                    />
+                  {/* ── TAB SELECTOR ── */}
+                  <div className="flex gap-2 bg-white/[0.03] border border-white/10 p-1 rounded-xl mb-8 max-w-sm">
+                    <button
+                      onClick={() => setActiveTab("market")}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition ${
+                        activeTab === "market" ? "bg-emerald-600 text-white" : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      <BarChart2 size={14} /> Live Dashboard
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("news")}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition ${
+                        activeTab === "news" ? "bg-emerald-600 text-white" : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      <BlogIcon size={14} /> News & Blogs
+                    </button>
                   </div>
-                  <div className="p-5">
-                    <p className="text-[10px] text-slate-500 font-bold mb-2">
-                      {new Date(blog.publishedAt).toLocaleDateString()}
-                    </p>
-                    <h3 className="text-sm font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
-                      {blog.title}
-                    </h3>
-                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                      {blog.excerpt}
-                    </p>
-                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
-                      Read Analysis →
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* Structured JSON-LD for Calculators */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "FinancialProduct",
-              "name": "NEPSE WACC & Broker Fee Calculator",
-              "description": "Calculates WACC base value, updated broker slabs, SEBON fees, and CGT for NEPSE stock transactions.",
-              "category": "Investment Application",
-              "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-            })
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "FinancialProduct",
-              "name": "Technical Pivot Points Calculator",
-              "description": "Computes Classic, Woodie, and Fibonacci pivot point support/resistance levels for trading analysis.",
-              "category": "Technical Analysis Tool",
-              "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-            })
-          }}
-        />
-        {blogs.map((blog) => (
-          <script
-            key={`ld-${blog._id}`}
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                "@context": "https://schema.org",
-                "@type": "BlogPosting",
-                "headline": blog.title,
-                "description": blog.excerpt,
-                "image": blog.imageUrl || "https://www.tikajoshi.com.np/og-image.jpg",
-                "datePublished": blog.publishedAt,
-                "author": {
-                  "@type": "Person",
-                  "name": "Tika Joshi",
-                  "url": "https://www.tikajoshi.com.np"
-                }
-              })
-            }}
-          />
-        ))}
-
-        {/* ── NEPSE DAILY ANALYSIS PROGRAMMATIC BLOCK ── */}
-        <section className="p-6 sm:p-8 bg-[#0d1520] border border-slate-700/50 rounded-2xl mb-12">
-          <h2 className="text-xl sm:text-2xl font-black text-white mb-4">NEPSE Trend Analysis Today</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-sm font-bold text-slate-300 mb-2 uppercase tracking-wide">Market Turnovers</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Today's total turnover recorded at Rs {data?.marketStats.turnover || "..."} across {data?.marketStats.totalTrades || "..."} total trades. 
-                Keep tracking daily volume to identify accumulation or distribution phases in Nepal Stock Exchange.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-300 mb-2 uppercase tracking-wide">Technical Support and Resistance Levels</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                The current NEPSE index stands at {data?.marketStats.nepseIndex.value || "..."}. Watch the immediate technical support 
-                zones on the daily chart for potential bounce-backs, and resistance levels for profit booking opportunities.
-              </p>
-            </div>
-          </div>
-        </section>
-      </>
-    ) : (
-          <div className="space-y-8 animate-fade-up">
-            <div className="bg-[#0d1520] border border-slate-700/50 rounded-3xl p-6 sm:p-8">
-              <div className="flex flex-col mb-6">
-                <div className="flex items-center gap-3">
-                  <BlogIcon size={24} className="text-emerald-400" />
-                  <h2 className="text-xl sm:text-2xl font-black text-white">NEPSE News & Technical Analysis</h2>
-                </div>
-                <p className="text-xs text-slate-500 mt-1.5 font-semibold tracking-wide">
-                  Real-time &lsquo;live share market&rsquo; news and technical briefs.
-                </p>
-              </div>
-              <p className="text-slate-400 text-xs sm:text-sm mb-8 leading-relaxed">
-                Stay updated with daily analysis, expert market views, technical trend reports, and upcoming IPO notices for the Nepal Share Market.
-              </p>
-
-              {filteredBlogs.length === 0 ? (
-                <div className="text-center py-16 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl">
-                  <p className="text-slate-500 text-sm">No market analysis posts published yet. Use the admin panel to publish NEPSE News!</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredBlogs.map((blog) => {
-                    const bodyText = typeof blog.body === "string" ? blog.body : Array.isArray(blog.body) ? JSON.stringify(blog.body) : "";
-                    const readingTime = calculateReadingTime(bodyText);
-                    const displayCategory = blog.category || "NEPSE News";
-                    return (
-                      <Link
-                        key={blog._id}
-                        href={`/market/${blog.slug}`}
-                        className="group bg-[#020817] border border-slate-800 hover:border-emerald-500/30 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/[0.02]"
-                      >
-                        <div className="relative aspect-[16/10] bg-slate-900 overflow-hidden">
-                          {blog.imageUrl && (
-                            <Image
-                              src={blog.imageUrl}
-                              alt={blog.title}
-                              fill
-                              className="object-cover opacity-60 group-hover:opacity-85 group-hover:scale-105 transition-all duration-500"
-                            />
-                          )}
-                          <span className={`absolute top-4 left-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider backdrop-blur-md ${getCategoryBadgeClass(displayCategory)}`}>
-                            <Tag size={9} />
-                            {displayCategory}
-                          </span>
-                        </div>
-                        <div className="p-5">
-                          <div className="flex items-center justify-between gap-2 mb-2 text-[10px] text-slate-500 font-bold">
-                            <span>{new Date(blog.publishedAt).toLocaleDateString()}</span>
-                            <span className="flex items-center gap-1">
-                              <Clock size={10} className="text-emerald-400" />
-                              {readingTime}
-                            </span>
+                  {activeTab === "market" && (
+                    <>
+                      {/* ── LIVE MARKET TAPE ── */}
+                      {data && (data.topGainers.length > 0 || data.topLosers.length > 0) && (
+                        <div className="mb-8 rounded-2xl border border-slate-800/85 bg-[#0a0f1d] p-4 sm:p-5 shadow-sm">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            <h3 className="text-xs font-bold tracking-wider uppercase text-slate-300">Live Market Tape</h3>
                           </div>
-                          <h3 className="text-sm font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
-                            {blog.title}
-                          </h3>
-                          <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                            {blog.excerpt || blog.metaDescription}
-                          </p>
-                          <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
-                            Read Article →
-                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {data.topGainers.slice(0, 6).map((s) => (
+                              <button
+                                key={`g-${s.sym}`}
+                                onClick={() => {
+                                  setChartSymbol(s.sym);
+                                  document.getElementById("nepse-chart-view")?.scrollIntoView({ behavior: "smooth" });
+                                }}
+                                className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/10 transition-colors"
+                              >
+                                {s.sym} +{s.chg.toFixed(2)}%
+                              </button>
+                            ))}
+                            {data.topLosers.slice(0, 4).map((s) => (
+                              <button
+                                key={`l-${s.sym}`}
+                                onClick={() => {
+                                  setChartSymbol(s.sym);
+                                  document.getElementById("nepse-chart-view")?.scrollIntoView({ behavior: "smooth" });
+                                }}
+                                className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-1.5 text-xs font-semibold text-red-300 hover:bg-red-500/10 transition-colors"
+                              >
+                                {s.sym} {s.chg.toFixed(2)}%
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                      )}
 
-        {/* ── SEO CONTENT BLOCK ── */}
-        <section className="p-6 sm:p-8 bg-white/[0.02] border border-white/[0.06] rounded-2xl">
-          <h2 className="text-lg sm:text-xl font-black text-white mb-2">
-            NEPSE Live Share Market Today 2082 — Nepal&apos;s Best Stock Hub 📈
-          </h2>
-          <div className="text-slate-500 text-sm space-y-3 leading-relaxed">
-            <p>
-              <strong className="text-slate-300">Nepal Stock Exchange (NEPSE)</strong> को live share price,
-              floor sheet, र market depth — Tikajoshi मा real-time update हुन्छ।
-              आजको NEPSE index, top gainers, top losers, sector performance सबै एकै ठाउँमा — free मा।
-            </p>
-            <p>
-              <strong className="text-slate-300">Nepal Share Market 2082</strong> मा invest गर्न चाहनुहुन्छ?
-              NEPSE live chart, Mero Share IPO result check, forex exchange rates, र EMI / loan calculator —
-              सबै tools यहाँ छन्। Register नगरी use गर्न सकिन्छ।
-            </p>
-            <p>
-              <strong className="text-slate-300">IPO Apply गर्ने तरिका:</strong> Mero Share account खोल्नुस्,
-              CDSC मा DEMAT account बनाउनुस्, अनि available IPO हरूमा apply गर्नुस्।
-              Result directly यहाँ check गर्न सकिन्छ।
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-4 pt-4 border-t border-white/[0.05]">
-              {SEO_KEYWORDS.map((k, i) => (
-                <div key={i}
-                  className="flex items-center gap-1.5 text-xs text-slate-500 bg-white/[0.03] border border-white/[0.05] px-3 py-2 rounded-lg">
-                  <span className="text-emerald-400 text-[10px]">✓</span> {k}
-                </div>
-              ))}
-            </div>
-            {/* Partner Directories (Slightly visible tiny links at bottom of SEO content) */}
-            <div className="mt-6 pt-3 border-t border-white/[0.04] flex flex-wrap gap-2 text-[10px] text-slate-700">
-              <span>Web Directories:</span>
-              <a href="https://www.siteswebdirectory.com/Health_Medical/Dentistry/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-500 transition-colors">Dentists Marketing</a>
-              <span>·</span>
-              <a href="http://www.qualityinternetdirectory.com/science_and_technology/information_technology/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-500 transition-colors">Quality Internet Directory</a>
-              <span>·</span>
-              <a href="http://www.dracodirectory.com" target="_blank" rel="noopener noreferrer" className="hover:text-slate-500 transition-colors">Draco Free General Web Directory</a>
-            </div>
-          </div>
-        </section>
+                      {/* ── MARKET WATCH + TOP GAINERS/LOSERS ── */}
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2">
+                          <StockTable
+                            stocks={data?.stocks || []}
+                            loading={loading}
+                            onStockClick={(sym) => {
+                              setChartSymbol(sym);
+                              document.getElementById('nepse-chart-view')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-6">
+                          {data && data.topGainers.length > 0 && (
+                            <div className="bg-[#0a0f1d] border border-slate-800/80 rounded-2xl p-5 sm:p-6 shadow-sm">
+                              <div className="flex items-center gap-2 mb-4">
+                                <ArrowUpRight size={18} className="text-emerald-400" />
+                                <h3 className="font-bold text-white text-base sm:text-lg">Top Gainers 🚀</h3>
+                              </div>
+                              <div className="space-y-2">
+                                {data.topGainers.slice(0, 5).map((s, i) => (
+                                  <div key={i} className="flex items-center justify-between bg-slate-900/40 hover:bg-slate-900 border border-slate-800/60 rounded-xl px-3 py-2.5 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                      <span className="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold flex items-center justify-center border border-emerald-500/20">{i + 1}</span>
+                                      <span className="font-bold text-white text-sm">{s.sym}</span>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-sm font-bold text-white">{s.ltp?.toFixed(2)}</div>
+                                      <div className="text-[11px] font-bold text-emerald-400">+{s.chg?.toFixed(2)}%</div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {data && data.topLosers.length > 0 && (
+                            <div className="bg-[#0a0f1d] border border-slate-800/80 rounded-2xl p-5 sm:p-6 shadow-sm">
+                              <div className="flex items-center gap-2 mb-4">
+                                <ArrowDownRight size={18} className="text-red-400" />
+                                <h3 className="font-bold text-white text-base sm:text-lg">Top Losers 📉</h3>
+                              </div>
+                              <div className="space-y-2">
+                                {data.topLosers.slice(0, 5).map((s, i) => (
+                                  <div key={i} className="flex items-center justify-between bg-slate-900/40 hover:bg-slate-900 border border-slate-800/60 rounded-xl px-3 py-2.5 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                      <span className="w-6 h-6 rounded-full bg-red-500/10 text-red-400 text-[10px] font-bold flex items-center justify-center border border-red-500/20">{i + 1}</span>
+                                      <span className="font-bold text-white text-sm">{s.sym}</span>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-sm font-bold text-white">{s.ltp?.toFixed(2)}</div>
+                                      <div className="text-[11px] font-bold text-red-400">{s.chg?.toFixed(2)}%</div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </section>
 
-      </div>
-    </div>
-  );
-}
+                {activeTab === "market" ? (
+                  <>
+                    {/* ══════════════════════════════════════════
+                        ZONE 2 — CHARTS
+                    ══════════════════════════════════════════ */}
+                    <section className="mb-12">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* ── LIVE CHART ── */}
+                        <div id="nepse-chart-view" className="lg:col-span-2 scroll-mt-24">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 mb-5">
+                            <div>
+                              <h2 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2">
+                                <TrendingUp className="text-emerald-500" size={26} /> {chartSymbol === "NEPSE" ? "NEPSE Live" : `${chartSymbol} `} Chart
+                              </h2>
+                              <p className="text-slate-400 text-sm mt-1">Real-time candlestick chart — nepsealpha.com powered</p>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              {chartSymbol !== "NEPSE" && (
+                                <button onClick={() => setChartSymbol("NEPSE")}
+                                  className="flex items-center gap-2 text-sm bg-violet-600/20 text-violet-400 hover:bg-violet-600 hover:text-white active:scale-95 px-4 py-2 rounded-xl transition-all border border-violet-500/30">
+                                  <RefreshCw size={15} /> Back to NEPSE
+                                </button>
+                              )}
+                              <button
+                                onClick={toggleFullScreen}
+                                className="flex items-center gap-2 text-sm bg-slate-800 hover:bg-slate-700 active:scale-95 px-4 py-2 rounded-xl transition-all border border-slate-700/50">
+                                <Maximize2 size={15} /> Full Screen
+                              </button>
+                            </div>
+                          </div>
+
+                          <div
+                            ref={chartContainerRef}
+                            className={`bg-[#1e293b] border ${fullScreen ? "border-none" : "border-slate-700"} overflow-hidden shadow-2xl relative transition-all duration-300 ${
+                            fullScreen ? "w-full h-full bg-white p-0 m-0" : "rounded-3xl h-[480px] sm:h-[580px] lg:h-[700px]"
+                          }`}>
+                            {fullScreen && (
+                              <button onClick={toggleFullScreen}
+                                className="absolute top-4 right-4 bg-red-600 text-white p-3 rounded-full z-[110] hover:bg-red-500 shadow-2xl backdrop-blur-sm border border-red-400/30">
+                                <X size={24} />
+                              </button>
+                            )}
+                            <div className="w-full h-full relative bg-[#0a0f1d] flex items-center justify-center">
+                              {isMounted ? (
+                                <iframe
+                                  key={chartSymbol}
+                                  src={`https://nepsealpha.com/trading/chart?symbol=${chartSymbol}`}
+                                  className="absolute top-0 left-0 w-full h-full border-none pointer-events-auto"
+                                  style={fullScreen ? undefined : { filter: "hue-rotate(180deg) invert(0.92) contrast(0.85)" }}
+                                  title={`${chartSymbol} Live Chart`}
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="text-slate-500 text-xs animate-pulse">Loading Live Chart Widget...</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ── SECTOR PERFORMANCE ── */}
+                        <div>
+                          <SectorChart
+                            sectors={data?.sectors || []}
+                            loading={loading}
+                          />
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* ══════════════════════════════════════════
+                        ZONE 3 — AI PREDICTOR
+                    ══════════════════════════════════════════ */}
+                    <section className="mb-12">
+                      <StockPredictor stocks={data?.stocks || []} />
+                    </section>
+
+                    {/* ══════════════════════════════════════════
+                        ZONE 4 — IPO / MERO SHARE
+                    ══════════════════════════════════════════ */}
+                    <section className="mb-12">
+                      <div className="bg-gradient-to-r from-emerald-950/40 to-blue-950/40 border border-slate-800 p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-emerald-500 p-2.5 rounded-xl shrink-0">
+                            <Star fill="white" size={20} className="text-white" />
+                          </div>
+                          <div>
+                            <h2 className="text-base sm:text-lg font-bold text-white">IPO / Mero Share</h2>
+                            <p className="text-emerald-300/80 text-xs sm:text-sm mt-0.5">Apply for IPO र result check गर्नुस् — directly CDSC bata।</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3 w-full sm:w-auto shrink-0">
+                          <a href="https://iporesult.cdsc.com.np/" target="_blank"
+                            className="flex-1 sm:flex-none text-center bg-emerald-600 hover:bg-emerald-550 active:scale-95 px-4.5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md shadow-emerald-950/40">
+                            Check IPO Result
+                          </a>
+                          <a href="https://meroshare.cdsc.com.np/" target="_blank"
+                            className="flex-1 sm:flex-none text-center bg-blue-600 hover:bg-blue-550 active:scale-95 px-4.5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-md shadow-blue-950/40">
+                            Mero Share
+                          </a>
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* ══════════════════════════════════════════
+                        ZONE 5 — FINANCIAL TOOLS (all calculators)
+                    ══════════════════════════════════════════ */}
+                    <section className="mb-12">
+                      <h2 className="text-xl sm:text-2xl font-black text-white mb-5 flex items-center gap-2">
+                        <Calculator size={22} className="text-violet-400" /> Financial Tools
+                      </h2>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <EmiCalculator />
+                        <SipCalculator />
+                        <ShareAdjustmentCalculator />
+                        <WaccCalculator />
+                        <PivotCalculator />
+                      </div>
+                    </section>
+
+                    {/* ══════════════════════════════════════════
+                        ZONE 6 — FOREX RATE
+                    ══════════════════════════════════════════ */}
+                    <section className="mb-12">
+                      <ForexWidget />
+                    </section>
+
+                    {/* ══════════════════════════════════════════
+                        ZONE 7 — MARKET RESOURCES
+                    ══════════════════════════════════════════ */}
+                    <section className="mb-12">
+                      <h2 className="text-xl sm:text-2xl font-black text-white mb-5">Market Resources</h2>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {QUICK_LINKS.map((item, i) => (
+                          <a key={i} href={item.link} target="_blank"
+                            className={`p-4 sm:p-5 bg-[#0d1520]/80 border ${item.color} rounded-2xl hover:bg-[#1a2535] active:scale-[0.98] transition-all group flex items-center justify-between`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-xl leading-none">{item.icon}</span>
+                              <span className="font-bold text-sm text-slate-200 group-hover:text-white transition-colors">
+                                {item.name}
+                              </span>
+                            </div>
+                            <ExternalLink size={15} className="text-slate-600 group-hover:text-white transition-colors shrink-0" />
+                          </a>
+                        ))}
+                      </div>
+                    </section>
+
+                    {/* ══════════════════════════════════════════
+                        ZONE 8 — NEWS & BLOGS / MARKET INSIGHTS
+                    ══════════════════════════════════════════ */}
+                    {blogs.length > 0 && (
+                      <section className="mb-12 border-t border-slate-800 pt-12">
+                        <div className="flex items-center gap-3 mb-8">
+                          <BlogIcon className="text-emerald-400" />
+                          <h2 className="text-2xl font-black text-white uppercase tracking-wider">
+                            Market Insights & Technical Guides
+                          </h2>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-6">
+                          {blogs.map((blog) => (
+                            <Link
+                              key={blog._id}
+                              href={`/market/${blog.slug}`}
+                              className="group bg-[#0d1520] border border-slate-800 hover:border-emerald-500/30 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
+                            >
+                              <div className="relative h-44 bg-slate-900">
+                                <Image
+                                  src={blog.imageUrl || "/og-image.jpg"}
+                                  alt={blog.title}
+                                  fill
+                                  className="object-cover opacity-60 group-hover:opacity-85 transition-opacity"
+                                />
+                              </div>
+                              <div className="p-5">
+                                <p className="text-[10px] text-slate-500 font-bold mb-2">
+                                  {new Date(blog.publishedAt).toLocaleDateString()}
+                                </p>
+                                <h3 className="text-sm font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
+                                  {blog.title}
+                                </h3>
+                                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                                  {blog.excerpt}
+                                </p>
+                                <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
+                                  Read Analysis →
+                                </span>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
+                    {/* Structured JSON-LD for Calculators */}
+                    <script
+                      type="application/ld+json"
+                      dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                          "@context": "https://schema.org",
+                          "@type": "FinancialProduct",
+                          "name": "NEPSE WACC & Broker Fee Calculator",
+                          "description": "Calculates WACC base value, updated broker slabs, SEBON fees, and CGT for NEPSE stock transactions.",
+                          "category": "Investment Application",
+                          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+                        })
+                      }}
+                    />
+                    <script
+                      type="application/ld+json"
+                      dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                          "@context": "https://schema.org",
+                          "@type": "FinancialProduct",
+                          "name": "Technical Pivot Points Calculator",
+                          "description": "Computes Classic, Woodie, and Fibonacci pivot point support/resistance levels for trading analysis.",
+                          "category": "Technical Analysis Tool",
+                          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+                        })
+                      }}
+                    />
+                    {blogs.map((blog) => (
+                      <script
+                        key={`ld-${blog._id}`}
+                        type="application/ld+json"
+                        dangerouslySetInnerHTML={{
+                          __html: JSON.stringify({
+                            "@context": "https://schema.org",
+                            "@type": "BlogPosting",
+                            "headline": blog.title,
+                            "description": blog.excerpt,
+                            "image": blog.imageUrl || "https://www.tikajoshi.com.np/og-image.jpg",
+                            "datePublished": blog.publishedAt,
+                            "author": {
+                              "@type": "Person",
+                              "name": "Tika Joshi",
+                              "url": "https://www.tikajoshi.com.np"
+                            }
+                          })
+                        }}
+                      />
+                    ))}
+
+                    {/* ── NEPSE DAILY ANALYSIS PROGRAMMATIC BLOCK ── */}
+                    <section className="p-6 sm:p-8 bg-[#0a0f1d] border border-slate-800/80 rounded-2xl mb-12 shadow-sm">
+                      <h2 className="text-xl sm:text-2xl font-bold text-white mb-5">NEPSE Trend Analysis Today</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <h3 className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Market Turnovers</h3>
+                          <p className="text-sm text-slate-300 leading-relaxed">
+                            Today&apos;s total turnover recorded at Rs {data?.marketStats.turnover || "Updating shortly"} across {data?.marketStats.totalTrades || "Updating shortly"} total trades.
+                            Keep tracking daily volume to identify accumulation or distribution phases in Nepal Stock Exchange.
+                          </p>
+                        </div>
+                        <div>
+                          <h3 className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Technical Support and Resistance Levels</h3>
+                          <p className="text-sm text-slate-300 leading-relaxed">
+                            The current NEPSE index stands at {data?.marketStats.nepseIndex.value || "Updating shortly"}. Watch the immediate technical support
+                            zones on the daily chart for potential bounce-backs, and resistance levels for profit booking opportunities.
+                          </p>
+                        </div>
+                      </div>
+                    </section>
+                  </>
+                ) : (
+                  <div className="space-y-8 animate-fade-up">
+                    <div className="bg-[#0d1520] border border-slate-700/50 rounded-3xl p-6 sm:p-8">
+                      <div className="flex flex-col mb-6">
+                        <div className="flex items-center gap-3">
+                          <BlogIcon size={24} className="text-emerald-400" />
+                          <h2 className="text-xl sm:text-2xl font-black text-white">NEPSE News & Technical Analysis</h2>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1.5 font-semibold tracking-wide">
+                          Real-time &lsquo;live share market&rsquo; news and technical briefs.
+                        </p>
+                      </div>
+                      <p className="text-slate-400 text-xs sm:text-sm mb-8 leading-relaxed">
+                        Stay updated with daily analysis, expert market views, technical trend reports, and upcoming IPO notices for the Nepal Share Market.
+                      </p>
+
+                      {filteredBlogs.length === 0 ? (
+                        <div className="text-center py-16 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl">
+                          <p className="text-slate-500 text-sm">No market analysis posts published yet. Use the admin panel to publish NEPSE News!</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {filteredBlogs.map((blog) => {
+                            const bodyText = typeof blog.body === "string" ? blog.body : Array.isArray(blog.body) ? JSON.stringify(blog.body) : "";
+                            const readingTime = calculateReadingTime(bodyText);
+                            const displayCategory = blog.category || "NEPSE News";
+                            return (
+                              <Link
+                                key={blog._id}
+                                href={`/market/${blog.slug}`}
+                                className="group bg-[#020817] border border-slate-800 hover:border-emerald-500/30 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/[0.02]"
+                              >
+                                <div className="relative aspect-[16/10] bg-slate-900 overflow-hidden">
+                                  {blog.imageUrl && (
+                                    <Image
+                                      src={blog.imageUrl}
+                                      alt={blog.title}
+                                      fill
+                                      className="object-cover opacity-60 group-hover:opacity-85 group-hover:scale-105 transition-all duration-500"
+                                    />
+                                  )}
+                                  <span className={`absolute top-4 left-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider backdrop-blur-md ${getCategoryBadgeClass(displayCategory)}`}>
+                                    <Tag size={9} />
+                                    {displayCategory}
+                                  </span>
+                                </div>
+                                <div className="p-5">
+                                  <div className="flex items-center justify-between gap-2 mb-2 text-[10px] text-slate-500 font-bold">
+                                    <span>{new Date(blog.publishedAt).toLocaleDateString()}</span>
+                                    <span className="flex items-center gap-1">
+                                      <Clock size={10} className="text-emerald-400" />
+                                      {readingTime}
+                                    </span>
+                                  </div>
+                                  <h3 className="text-sm font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
+                                    {blog.title}
+                                  </h3>
+                                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                                    {blog.excerpt || blog.metaDescription}
+                                  </p>
+                                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
+                                    Read Article →
+                                  </span>
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ══════════════════════════════════════════
+                    ZONE 9 — SEO CONTENT BLOCK (always visible, bottom)
+                ══════════════════════════════════════════ */}
+                <section className="p-6 sm:p-8 bg-white/[0.02] border border-white/[0.06] rounded-2xl">
+                  <h2 className="text-lg sm:text-xl font-black text-white mb-2">
+                    NEPSE Live Share Market Today 2082 — Nepal&apos;s Best Stock Hub 📈
+                  </h2>
+                  <div className="text-slate-500 text-sm space-y-3 leading-relaxed">
+                    <p>
+                      <strong className="text-slate-300">Nepal Stock Exchange (NEPSE)</strong> को live share price,
+                      floor sheet, र market depth — Tikajoshi मा real-time update हुन्छ।
+                      आजको NEPSE index, top gainers, top losers, sector performance सबै एकै ठाउँमा — free मा।
+                    </p>
+                    <p>
+                      <strong className="text-slate-300">Nepal Share Market 2082</strong> मा invest गर्न चाहनुहुन्छ?
+                      NEPSE live chart, Mero Share IPO result check, forex exchange rates, र EMI / loan calculator —
+                      सबै tools यहाँ छन्। Register नगरी use गर्न सकिन्छ।
+                    </p>
+                    <p>
+                      <strong className="text-slate-300">IPO Apply गर्ने तरिका:</strong> Mero Share account खोल्नुस्,
+                      CDSC मा DEMAT account बनाउनुस्, अनि available IPO हरूमा apply गर्नुस्।
+                      Result directly यहाँ check गर्न सकिन्छ।
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-4 pt-4 border-t border-white/[0.05]">
+                      {SEO_KEYWORDS.map((k, i) => (
+                        <div key={i}
+                          className="flex items-center gap-1.5 text-xs text-slate-500 bg-white/[0.03] border border-white/[0.05] px-3 py-2 rounded-lg">
+                          <span className="text-emerald-400 text-[10px]">✓</span> {k}
+                        </div>
+                      ))}
+                    </div>
+                    {/* Partner Directories (Slightly visible tiny links at bottom of SEO content) */}
+                    <div className="mt-6 pt-3 border-t border-white/[0.04] flex flex-wrap gap-2 text-[10px] text-slate-700">
+                      <span>Web Directories:</span>
+                      <a href="https://www.siteswebdirectory.com/Health_Medical/Dentistry/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-500 transition-colors">Dentists Marketing</a>
+                      <span>·</span>
+                      <a href="http://www.qualityinternetdirectory.com/science_and_technology/information_technology/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-500 transition-colors">Quality Internet Directory</a>
+                      <span>·</span>
+                      <a href="http://www.dracodirectory.com" target="_blank" rel="noopener noreferrer" className="hover:text-slate-500 transition-colors">Draco Free General Web Directory</a>
+                    </div>
+                  </div>
+                </section>
+
+              </div>
+            </div>
+          );
+        }
