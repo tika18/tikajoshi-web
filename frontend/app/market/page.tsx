@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef, memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
+import SpotlightCard from "@/components/SpotlightCard";
 import StockPredictorOriginal from "@/components/StockPredictor";
 import SipCalculatorOriginal from "@/components/SipCalculator";
 import ShareAdjustmentCalculatorOriginal from "@/components/ShareAdjustmentCalculator";
@@ -1047,33 +1048,33 @@ export default function MarketPage() {
                       ) : marketBlogs.length > 0 ? (
                         <div className="grid md:grid-cols-3 gap-6">
                           {marketBlogs.map((blog) => (
-                            <Link
-                              key={blog._id}
-                              href={`/market/${blog.slug}`}
-                              className="group bg-[#0d1520] border border-slate-800 hover:border-emerald-500/30 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
-                            >
-                              <div className="relative h-44 bg-slate-900">
-                                <Image
-                                  src={blog.imageUrl || "/og-image.jpg"}
-                                  alt={blog.title}
-                                  fill
-                                  className="object-cover opacity-60 group-hover:opacity-85 transition-opacity"
-                                />
-                              </div>
-                              <div className="p-5">
-                                <p className="text-[10px] text-slate-500 font-bold mb-2">
-                                  {new Date(blog.publishedAt).toLocaleDateString()}
-                                </p>
-                                <h3 className="text-sm font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
-                                  {blog.title}
-                                </h3>
-                                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                                  {blog.excerpt || blog.metaDescription}
-                                </p>
-                                <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
-                                  Read Analysis →
-                                </span>
-                              </div>
+                            <Link key={blog._id} href={`/market/${blog.slug}`} className="block h-full group">
+                              <SpotlightCard className="h-full border border-slate-800 hover:border-emerald-500/30">
+                                <div className="relative h-44 bg-slate-900 overflow-hidden">
+                                  <Image
+                                    src={blog.imageUrl || "/og-image.jpg"}
+                                    alt={blog.title}
+                                    fill
+                                    className="object-cover opacity-60 group-hover:opacity-85 transition-opacity"
+                                  />
+                                </div>
+                                <div className="p-5 flex flex-col justify-between flex-1">
+                                  <div>
+                                    <p className="text-[10px] text-slate-500 font-bold mb-2">
+                                      {new Date(blog.publishedAt).toLocaleDateString()}
+                                    </p>
+                                    <h3 className="text-sm font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2 leading-snug">
+                                      {blog.title}
+                                    </h3>
+                                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                                      {blog.excerpt || blog.metaDescription}
+                                    </p>
+                                  </div>
+                                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
+                                    Read Analysis →
+                                  </span>
+                                </div>
+                              </SpotlightCard>
                             </Link>
                           ))}
                         </div>

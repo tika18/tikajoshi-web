@@ -69,6 +69,10 @@ export const metadata: Metadata = {
   },
 };
 
+import SmoothScroll from "@/components/SmoothScroll";
+import ScrollProgress from "@/components/ScrollProgress";
+import AmbientGlow from "@/components/AmbientGlow";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -76,13 +80,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${font.className} app-shell bg-background text-foreground antialiased`}>
+      <body className={`${font.className} app-shell bg-[#020409] text-foreground antialiased selection:bg-violet-500/30 overflow-x-hidden`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <AuthProvider>
             <LanguageProvider>
-              <div className="aurora-bg" />
-              <ThreeDBackdrop />
-              <div className="app-content">{children}</div>
+              <SmoothScroll>
+                <ScrollProgress />
+                <AmbientGlow />
+                <div className="aurora-bg" />
+                <ThreeDBackdrop />
+                <div className="app-content relative z-10">{children}</div>
+              </SmoothScroll>
             </LanguageProvider>
           </AuthProvider>
         </ThemeProvider>

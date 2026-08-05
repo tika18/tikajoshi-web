@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import HeroSearch from "@/components/HeroSearch";
 import NepseTicker from "@/components/NepseTicker";
 import { FadeIn, SlideIn, StaggerContainer, StaggerItem } from "@/components/ScrollReveal";
+import SpotlightCard from "@/components/SpotlightCard";
 import Link from "next/link";
 import Image from "next/image";
 import fs from "fs";
@@ -287,24 +288,23 @@ export default async function Home() {
         </FadeIn>
         <StaggerContainer staggerDelay={0.15} className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {CORE_HUBS.map((hub, i) => (
-            <StaggerItem key={i} direction="up">
-              <Link
-                href={hub.href}
-                className="group relative block overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.015] backdrop-blur-md p-6 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.8)]"
-              >
-                <div className={`absolute -right-10 -top-10 w-32 h-32 bg-gradient-to-br ${hub.glowColor} rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                <div className="absolute top-4 right-4 text-[9px] font-black px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-400 tracking-wider">
-                  {hub.tag}
-                </div>
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 ${hub.iconBg} transition-transform group-hover:scale-105 duration-300`}>
-                  {hub.icon}
-                </div>
-                <h3 className="text-lg font-black text-white mb-2 flex items-center gap-1">
-                  {hub.title} <ArrowUpRight size={14} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
-                </h3>
-                <p className="text-xs text-slate-400 leading-relaxed font-light">
-                  {hub.desc}
-                </p>
+            <StaggerItem key={i} direction="up" className="h-full">
+              <Link href={hub.href} className="block h-full group">
+                <SpotlightCard className="p-6 h-full border border-white/[0.08] hover:border-white/20">
+                  <div className={`absolute -right-10 -top-10 w-32 h-32 bg-gradient-to-br ${hub.glowColor} rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                  <div className="absolute top-4 right-4 text-[9px] font-black px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-slate-400 tracking-wider">
+                    {hub.tag}
+                  </div>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 ${hub.iconBg} transition-transform group-hover:scale-105 duration-300`}>
+                    {hub.icon}
+                  </div>
+                  <h3 className="text-lg font-black text-white mb-2 flex items-center gap-1">
+                    {hub.title} <ArrowUpRight size={14} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed font-light">
+                    {hub.desc}
+                  </p>
+                </SpotlightCard>
               </Link>
             </StaggerItem>
           ))}
@@ -336,43 +336,42 @@ export default async function Home() {
 
         <StaggerContainer staggerDelay={0.15} className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {blogs.map((blog) => (
-            <StaggerItem key={blog._id} direction="up">
-              <Link
-                href={`/blog/${blog.slug}`}
-                className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.015] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-violet-500/20 hover:shadow-[0_20px_40px_-15px_rgba(115,96,242,0.12)] h-full"
-              >
-                <div className="relative aspect-[16/10] bg-white/5 overflow-hidden">
-                  <Image
-                    src={blog.imageUrl || "/og-image.jpg"}
-                    alt={blog.title}
-                    fill
-                    className="object-cover opacity-60 group-hover:opacity-85 group-hover:scale-105 transition-all duration-500"
-                  />
-                  <span className={`absolute top-4 left-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider backdrop-blur-md ${getCategoryBadgeClass(blog.category)}`}>
-                    <Tag size={9} />
-                    {blog.category}
-                  </span>
-                </div>
-                <div className="p-5 flex flex-col justify-between flex-1">
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-2 text-[10px] text-slate-500 font-bold">
-                      <span>{new Date(blog.publishedAt).toLocaleDateString()}</span>
-                      <span className="flex items-center gap-1">
-                        <Clock size={10} className="text-violet-400" />
-                        {blog.readingTime}
-                      </span>
-                    </div>
-                    <h3 className="text-base font-bold text-white mb-2 group-hover:text-violet-400 transition-colors line-clamp-2 leading-snug">
-                      {blog.title}
-                    </h3>
-                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                      {blog.excerpt}
-                    </p>
+            <StaggerItem key={blog._id} direction="up" className="h-full">
+              <Link href={`/blog/${blog.slug}`} className="block h-full group">
+                <SpotlightCard className="h-full border border-white/[0.08] hover:border-violet-500/30">
+                  <div className="relative aspect-[16/10] bg-white/5 overflow-hidden">
+                    <Image
+                      src={blog.imageUrl || "/og-image.jpg"}
+                      alt={blog.title}
+                      fill
+                      className="object-cover opacity-60 group-hover:opacity-85 group-hover:scale-105 transition-all duration-500"
+                    />
+                    <span className={`absolute top-4 left-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider backdrop-blur-md ${getCategoryBadgeClass(blog.category)}`}>
+                      <Tag size={9} />
+                      {blog.category}
+                    </span>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
-                    Read Article →
-                  </span>
-                </div>
+                  <div className="p-5 flex flex-col justify-between flex-1">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2 text-[10px] text-slate-500 font-bold">
+                        <span>{new Date(blog.publishedAt).toLocaleDateString()}</span>
+                        <span className="flex items-center gap-1">
+                          <Clock size={10} className="text-violet-400" />
+                          {blog.readingTime}
+                        </span>
+                      </div>
+                      <h3 className="text-base font-bold text-white mb-2 group-hover:text-violet-400 transition-colors line-clamp-2 leading-snug">
+                        {blog.title}
+                      </h3>
+                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                        {blog.excerpt}
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
+                      Read Article →
+                    </span>
+                  </div>
+                </SpotlightCard>
               </Link>
             </StaggerItem>
           ))}
@@ -406,43 +405,42 @@ export default async function Home() {
 
             <StaggerContainer staggerDelay={0.12} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {vehicles.map((vehicle: any) => (
-                <StaggerItem key={vehicle.slug} direction="up">
-                  <Link
-                    href={`/vehicles/${vehicle.slug}`}
-                    className="group bg-white/[0.03] border border-white/8 hover:border-blue-500/30 rounded-2xl overflow-hidden hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/5 transition-all duration-300 flex flex-col h-full"
-                  >
-                    <div className="aspect-[4/3] relative overflow-hidden bg-white/5">
-                      {vehicle.imageUrl ? (
-                        <Image
-                          src={vehicle.imageUrl}
-                          alt={vehicle.name}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-4xl">🏍️</div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      <div className="absolute top-3 left-3 bg-black/50 backdrop-blur border border-white/10 px-2.5 py-1 rounded-full text-[10px] font-bold text-white uppercase tracking-wider">
-                        {vehicle.brand}
+                <StaggerItem key={vehicle.slug} direction="up" className="h-full">
+                  <Link href={`/vehicles/${vehicle.slug}`} className="block h-full group">
+                    <SpotlightCard className="h-full border border-white/[0.08] hover:border-blue-500/30">
+                      <div className="aspect-[4/3] relative overflow-hidden bg-white/5">
+                        {vehicle.imageUrl ? (
+                          <Image
+                            src={vehicle.imageUrl}
+                            alt={vehicle.name}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-4xl">🏍️</div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div className="absolute top-3 left-3 bg-black/50 backdrop-blur border border-white/10 px-2.5 py-1 rounded-full text-[10px] font-bold text-white uppercase tracking-wider">
+                          {vehicle.brand}
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-4 flex flex-col justify-between flex-1">
-                      <div>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{vehicle.type}</p>
-                        <h3 className="text-base font-black text-white mb-3 group-hover:text-blue-300 transition-colors">
-                          {vehicle.name}
-                        </h3>
+                      <div className="p-4 flex flex-col justify-between flex-1">
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{vehicle.type}</p>
+                          <h3 className="text-base font-black text-white mb-3 group-hover:text-blue-300 transition-colors">
+                            {vehicle.name}
+                          </h3>
+                        </div>
+                        <div className="flex items-center justify-between pt-3 border-t border-white/6 mt-auto">
+                          <span className="text-base font-black text-green-400">
+                            Rs. {Number(vehicle.price).toLocaleString()}
+                          </span>
+                          <span className="text-xs text-slate-600 group-hover:text-blue-400 transition-colors">
+                            Review →
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between pt-3 border-t border-white/6 mt-auto">
-                        <span className="text-base font-black text-green-400">
-                          Rs. {Number(vehicle.price).toLocaleString()}
-                        </span>
-                        <span className="text-xs text-slate-600 group-hover:text-blue-400 transition-colors">
-                          Review →
-                        </span>
-                      </div>
-                    </div>
+                    </SpotlightCard>
                   </Link>
                 </StaggerItem>
               ))}
