@@ -545,6 +545,7 @@ export default function MarketPage() {
   const [lastUpdated, setLastUpdated] = useState("");
   const [sourceUpdated, setSourceUpdated] = useState("");
   const [blogs, setBlogs] = useState<any[]>([]);
+  const [blogsLoading, setBlogsLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -553,6 +554,7 @@ export default function MarketPage() {
 
   // Fetch target page blogs
   useEffect(() => {
+    setBlogsLoading(true);
     fetch("/api/blogs?targetPage=market")
       .then((res) => res.json())
       .then((data) => {
@@ -560,7 +562,8 @@ export default function MarketPage() {
           setBlogs(data.posts || []);
         }
       })
-      .catch((err) => console.error("Error fetching market blogs:", err));
+      .catch((err) => console.error("Error fetching market blogs:", err))
+      .finally(() => setBlogsLoading(false));
   }, []);
 
   const fetchData = useCallback(async (showRefreshIndicator = false) => {
@@ -609,9 +612,14 @@ export default function MarketPage() {
     }
   };
 
-  // Filter blogs for the news tab
-  const marketCategories = ["NEPSE News", "Technical Analysis", "IPO Updates"];
-  const filteredBlogs = blogs.filter((b: any) => marketCategories.includes(b.category || "NEPSE News"));
+  // Filter blogs strictly for Market / Share Market categories
+  const marketCategories = ["market", "share market", "nepse news", "technical analysis", "ipo updates", "nepse"];
+  const marketBlogs = blogs.filter((b: any) => {
+    const cat = (b.category || "").toLowerCase();
+    const tp = (b.targetPage || "").toLowerCase().replace(/^\//, "");
+    return tp === "market" || marketCategories.some((mc) => cat.includes(mc));
+  });
+  const filteredBlogs = marketBlogs;
 
   // Build market stats display items
   const statsItems: Array<{ label: string; value: string | number; change: string; up: boolean | null }> = data
@@ -1015,16 +1023,30 @@ export default function MarketPage() {
                     {/* ══════════════════════════════════════════
                         ZONE 8 — NEWS & BLOGS / MARKET INSIGHTS
                     ══════════════════════════════════════════ */}
-                    {blogs.length > 0 && (
-                      <section className="mb-12 border-t border-slate-800 pt-12">
-                        <div className="flex items-center gap-3 mb-8">
-                          <BlogIcon className="text-emerald-400" />
-                          <h2 className="text-2xl font-black text-white uppercase tracking-wider">
-                            Market Insights & Technical Guides
-                          </h2>
-                        </div>
+                    <section className="mb-12 border-t border-slate-800 pt-12">
+                      <div className="flex items-center gap-3 mb-8">
+                        <BlogIcon className="text-emerald-400" />
+                        <h2 className="text-2xl font-black text-white uppercase tracking-wider">
+                          Market Insights & Technical Guides
+                        </h2>
+                      </div>
+
+                      {blogsLoading ? (
                         <div className="grid md:grid-cols-3 gap-6">
-                          {blogs.map((blog) => (
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="bg-[#0d1520] border border-slate-800 rounded-2xl overflow-hidden animate-pulse">
+                              <div className="h-44 bg-slate-800/60" />
+                              <div className="p-5 space-y-3">
+                                <div className="h-3 w-20 bg-slate-800 rounded" />
+                                <div className="h-4 w-full bg-slate-800 rounded" />
+                                <div className="h-3 w-4/5 bg-slate-800 rounded" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : marketBlogs.length > 0 ? (
+                        <div className="grid md:grid-cols-3 gap-6">
+                          {marketBlogs.map((blog) => (
                             <Link
                               key={blog._id}
                               href={`/market/${blog.slug}`}
@@ -1046,7 +1068,7 @@ export default function MarketPage() {
                                   {blog.title}
                                 </h3>
                                 <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                                  {blog.excerpt}
+                                  {blog.excerpt || blog.metaDescription}
                                 </p>
                                 <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-white transition-colors mt-4 uppercase tracking-wider font-bold">
                                   Read Analysis →
@@ -1055,8 +1077,13 @@ export default function MarketPage() {
                             </Link>
                           ))}
                         </div>
-                      </section>
-                    )}
+                      ) : (
+                        <div className="text-center py-12 px-4 bg-[#0d1520]/60 border border-slate-800/80 rounded-2xl">
+                          <p className="text-sm font-semibold text-slate-400 mb-1">No market-specific articles published yet</p>
+                          <p className="text-xs text-slate-500">Check back daily for real-time NEPSE technical analysis, stock guides, and IPO reviews.</p>
+                        </div>
+                      )}
+                    </section>
 
                     {/* Structured JSON-LD for Calculators */}
                     <script

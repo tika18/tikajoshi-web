@@ -19,6 +19,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  Sparkles,
+  Globe,
+  Bot,
+  X,
 } from "lucide-react";
 
 interface Post {
@@ -45,6 +49,14 @@ export default function BlogsClient({ initialPosts }: { initialPosts: Post[] }) 
   const [currentPage, setCurrentPage] = useState(1);
   const [isPending, startTransition] = useTransition();
   const [actionId, setActionId] = useState<string | null>(null); // tracks row-level loading
+
+  // AI Blog Generator Modal State
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiLang, setAiLang] = useState<"en" | "ne" | "romanized">("en");
+  const [aiTopic, setAiTopic] = useState("");
+  const [aiCategory, setAiCategory] = useState("Market");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiStep, setAiStep] = useState<string | null>(null);
 
   const pageSize = 8;
 
@@ -195,6 +207,54 @@ export default function BlogsClient({ initialPosts }: { initialPosts: Post[] }) 
     });
   };
 
+  const handleGenerateAiBlog = async () => {
+    setAiGenerating(true);
+    setAiStep("1. Connecting to Gemini AI...");
+
+    try {
+      const res = await fetch("/api/auto-blog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: aiTopic.trim() || undefined,
+          lang: aiLang,
+          category: aiCategory,
+          targetPage: aiCategory.toLowerCase().includes("market") ? "market" : "general",
+          secret: "tikajoshi-auto-blog-password",
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast(`Generated and published: "${data.title}"`, "success");
+        setShowAiModal(false);
+        setAiTopic("");
+
+        // Add newly generated post to top of list
+        const newPost: Post = {
+          _id: data.slug || `ai-${Date.now()}`,
+          title: data.title,
+          slug: data.slug,
+          excerpt: data.topic || "",
+          publishedAt: new Date().toISOString(),
+          _createdAt: new Date().toISOString(),
+          _updatedAt: new Date().toISOString(),
+          imageUrl: data.imageUrl,
+          status: "published",
+        };
+        setPosts((prev) => [newPost, ...prev]);
+        router.refresh();
+      } else {
+        toast(data.error || "Failed to generate blog", "error");
+      }
+    } catch (err: any) {
+      toast(err.message || "AI blog generation failed", "error");
+    } finally {
+      setAiGenerating(false);
+      setAiStep(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Row */}
@@ -203,12 +263,20 @@ export default function BlogsClient({ initialPosts }: { initialPosts: Post[] }) 
           <h1 className="text-3xl font-black tracking-tight">Content Manager</h1>
           <p className="text-xs text-slate-500 mt-1">Publish, schedule, search and edit blog content</p>
         </div>
-        <Link
-          href="/admin/blogs/new"
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 border border-indigo-400/20 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-indigo-600/10 self-start sm:self-auto"
-        >
-          <Plus size={15} /> Write New Post
-        </Link>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            onClick={() => setShowAiModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 border border-emerald-400/20 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-600/10"
+          >
+            <Sparkles size={15} /> AI Auto Blog Generator
+          </button>
+          <Link
+            href="/admin/blogs/new"
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 border border-indigo-400/20 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-indigo-600/10"
+          >
+            <Plus size={15} /> Write New Post
+          </Link>
+        </div>
       </div>
 
       {/* Filters & Actions Bar */}
@@ -462,6 +530,154 @@ export default function BlogsClient({ initialPosts }: { initialPosts: Post[] }) 
           </div>
         </div>
       </div>
+
+      {/* AI Auto Blog Generator Modal */}
+      {showAiModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-[#0b101b] border border-emerald-500/25 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative overflow-hidden">
+            {/* Ambient Background Glow */}
+            <div className="absolute -top-20 -right-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Modal Header */}
+            <div className="flex items-center justify-between mb-5 pb-4 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white">AI Auto Blog Generator</h3>
+                  <p className="text-xs text-slate-400">Generate & publish SEO-optimized articles with Gemini AI</p>
+                </div>
+              </div>
+              <button
+                onClick={() => !aiGenerating && setShowAiModal(false)}
+                disabled={aiGenerating}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 transition disabled:opacity-40"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Form Body */}
+            <div className="space-y-4">
+              {/* 1. Language Toggle */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                  Language Choice
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAiLang("en")}
+                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                      aiLang === "en"
+                        ? "bg-emerald-600 text-white border-emerald-400/40 shadow-lg shadow-emerald-600/20"
+                        : "bg-white/[0.03] text-slate-400 border-white/10 hover:bg-white/[0.06]"
+                    }`}
+                  >
+                    <span>🇬🇧 English</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAiLang("ne")}
+                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                      aiLang === "ne"
+                        ? "bg-emerald-600 text-white border-emerald-400/40 shadow-lg shadow-emerald-600/20"
+                        : "bg-white/[0.03] text-slate-400 border-white/10 hover:bg-white/[0.06]"
+                    }`}
+                  >
+                    <span>🇳🇵 Nepali</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAiLang("romanized")}
+                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                      aiLang === "romanized"
+                        ? "bg-emerald-600 text-white border-emerald-400/40 shadow-lg shadow-emerald-600/20"
+                        : "bg-white/[0.03] text-slate-400 border-white/10 hover:bg-white/[0.06]"
+                    }`}
+                  >
+                    <span>Romanized</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. Category Selector */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                  Target Category
+                </label>
+                <select
+                  value={aiCategory}
+                  onChange={(e) => setAiCategory(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-xs text-white outline-none focus:border-emerald-500"
+                >
+                  <option value="Market">Market (NEPSE News, Stock Analysis)</option>
+                  <option value="Technology">Technology & AI Tools</option>
+                  <option value="Education">Education & Exam Preparation</option>
+                  <option value="Vehicles">Vehicles & Automotive</option>
+                  <option value="Lifestyle">Lifestyle & Career</option>
+                </select>
+              </div>
+
+              {/* 3. Custom Topic (Optional) */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                  Blog Topic <span className="text-slate-500 font-normal lowercase">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. NEPSE Live Trading Strategies & Technical Analysis 2025"
+                  value={aiTopic}
+                  onChange={(e) => setAiTopic(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-xs text-white placeholder:text-slate-600 outline-none focus:border-emerald-500"
+                />
+                <p className="text-[11px] text-slate-500 mt-1.5">
+                  Leave blank to auto-select an unposted trending topic!
+                </p>
+              </div>
+
+              {/* Status Step Display */}
+              {aiStep && (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-emerald-400 text-xs flex items-center gap-2">
+                  <Loader2 size={14} className="animate-spin shrink-0" />
+                  <span>{aiStep}</span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAiModal(false)}
+                  disabled={aiGenerating}
+                  className="px-4 py-2.5 rounded-xl border border-white/10 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 transition disabled:opacity-40"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleGenerateAiBlog}
+                  disabled={aiGenerating}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/20 flex items-center gap-2 disabled:opacity-50"
+                >
+                  {aiGenerating ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin" />
+                      <span>Generating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={15} />
+                      <span>Generate & Publish</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

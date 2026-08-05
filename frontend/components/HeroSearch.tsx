@@ -48,39 +48,62 @@ const TYPE_SPEED   = 70;
 const DELETE_SPEED = 38;
 const PAUSE_MS     = 2600;
 
-const featuredBlogs = [
+interface CarouselBlogItem {
+  id: string | number;
+  tag: string;
+  tagColor: string;
+  title: string;
+  desc: string;
+  image: string;
+  author: string;
+  readTime: string;
+  link: string;
+}
+
+function getCategoryTagColor(cat?: string): string {
+  if (!cat) return "bg-violet-600";
+  const c = cat.toLowerCase();
+  if (c.includes("market") || c.includes("nepse") || c.includes("ipo") || c.includes("stock")) return "bg-cyan-600";
+  if (c.includes("ai") || c.includes("tech") || c.includes("tool")) return "bg-blue-600";
+  if (c.includes("auto") || c.includes("vehicle")) return "bg-orange-600";
+  if (c.includes("sport") || c.includes("chill")) return "bg-emerald-600";
+  if (c.includes("study") || c.includes("loksewa") || c.includes("ioe")) return "bg-purple-600";
+  return "bg-violet-600";
+}
+
+const DEFAULT_FEATURED_BLOGS: CarouselBlogItem[] = [
   {
-    id: 1,
+    id: "default-1",
     tag: "AI & Tech",
-    tagColor: "bg-blue-500",
+    tagColor: "bg-blue-600",
     title: "The Future of AI in Nepal's Education System",
-    desc: "How ChatGPT and Gemini are reshaping how IOE and TU students learn in 2024.",
+    desc: "How ChatGPT and Gemini are reshaping how IOE and TU students learn.",
     image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1200&auto=format&fit=crop",
     author: "Tech Desk",
-    readTime: "4 min",
-    link: "/news/tech",
+    readTime: "4 min read",
+    link: "/blog",
   },
   {
-    id: 2,
+    id: "default-2",
+    tag: "NEPSE Market",
+    tagColor: "bg-cyan-600",
+    title: "NEPSE Live Analysis & Stock Market Trends",
+    desc: "Real-time market depth, technical indicators, and IPO tracking for investors.",
+    image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=1200&auto=format&fit=crop",
+    author: "Market Analyst",
+    readTime: "5 min read",
+    link: "/market",
+  },
+  {
+    id: "default-3",
     tag: "Auto Review",
-    tagColor: "bg-orange-500",
-    title: "Triumph Speed 400 Arrives in Nepal",
-    desc: "Is it the ultimate Royal Enfield killer? Full specs, price, and performance breakdown.",
+    tagColor: "bg-orange-600",
+    title: "Electric Vehicles Surge in Nepal",
+    desc: "Comprehensive review of EV pricing, tax policies, and battery range test.",
     image: "https://images.unsplash.com/photo-1695634065664-946cebaefdbd?q=80&w=1200&auto=format&fit=crop",
     author: "Auto Expert",
-    readTime: "6 min",
+    readTime: "6 min read",
     link: "/vehicles",
-  },
-  {
-    id: 3,
-    tag: "Sports",
-    tagColor: "bg-emerald-500",
-    title: "Nepal's Historic T20 World Cup Run",
-    desc: "Exclusive insights, player stats, and what to expect from upcoming clashes.",
-    image: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=1200&auto=format&fit=crop",
-    author: "Sports Live",
-    readTime: "3 min",
-    link: "/news/sports",
   },
 ];
 
@@ -154,14 +177,47 @@ export default function HeroSearch() {
     }
   }, [query]);
 
-  const nextSlide = () => setActiveSlide((p) => (p + 1) % featuredBlogs.length);
-  const prevSlide = () => setActiveSlide((p) => (p === 0 ? featuredBlogs.length - 1 : p - 1));
+  const [blogsList, setBlogsList] = useState<CarouselBlogItem[]>(DEFAULT_FEATURED_BLOGS);
+
+  // Fetch real featured blogs from API
+  useEffect(() => {
+    fetch("/api/blogs?featured=true")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.posts) && data.posts.length > 0) {
+          const mapped: CarouselBlogItem[] = data.posts.slice(0, 5).map((p: any, idx: number) => {
+            const bodyText = typeof p.body === "string" ? p.body : Array.isArray(p.body) ? JSON.stringify(p.body) : "";
+            const wordCount = bodyText.trim().split(/\s+/).length || 200;
+            const readTimeMinutes = Math.max(1, Math.ceil(wordCount / 200));
+
+            const isMarket = p.targetPage === "market" || (p.category && p.category.toLowerCase().includes("market"));
+            return {
+              id: p._id || p.slug || idx,
+              tag: p.category || "Featured",
+              tagColor: getCategoryTagColor(p.category),
+              title: p.title,
+              desc: p.excerpt || p.metaDescription || "Read full post on Tikajoshi.",
+              image: p.imageUrl || "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=1200&auto=format&fit=crop",
+              author: "Tech Desk",
+              readTime: `${readTimeMinutes} min read`,
+              link: isMarket ? `/market/${p.slug}` : `/blog/${p.slug}`,
+            };
+          });
+          setBlogsList(mapped);
+          setActiveSlide(0);
+        }
+      })
+      .catch((err) => console.error("Error fetching featured blogs for HeroSearch:", err));
+  }, []);
+
+  const nextSlide = () => setActiveSlide((p) => (blogsList.length > 0 ? (p + 1) % blogsList.length : 0));
+  const prevSlide = () => setActiveSlide((p) => (blogsList.length > 0 ? (p === 0 ? blogsList.length - 1 : p - 1) : 0));
 
   useEffect(() => {
-    if (paused) return;
+    if (paused || blogsList.length === 0) return;
     const t = setInterval(nextSlide, 6000);
     return () => clearInterval(t);
-  }, [paused]);
+  }, [paused, blogsList]);
 
   const onTouchStart = (e: React.TouchEvent) => setTouchStart(e.touches[0].clientX);
   const onTouchEnd   = (e: React.TouchEvent) => {
@@ -366,7 +422,7 @@ export default function HeroSearch() {
             >
               {/* Aspect ratio wrapper */}
               <div className="relative w-full" style={{ paddingBottom: "122%" }}>
-                {featuredBlogs.map((blog, idx) => {
+                {blogsList.map((blog, idx) => {
                   const isActive = idx === activeSlide;
                   return (
                     <div
@@ -445,7 +501,7 @@ export default function HeroSearch() {
                 </button>
 
                 <div className="flex gap-2 items-center">
-                  {featuredBlogs.map((_, idx) => (
+                  {blogsList.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => setActiveSlide(idx)}
