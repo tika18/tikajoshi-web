@@ -38,17 +38,18 @@ export default function SpotlightCard({
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      whileHover={liftOnHover ? { y: -6 } : undefined}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className={`relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0b1018]/80 backdrop-blur-xl transition-colors duration-300 hover:border-white/20 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] ${className}`}
+      whileHover={liftOnHover ? { y: -4 } : undefined}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      style={{ willChange: "transform", transform: "translateZ(0)" }}
+      className={`relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0b1018]/90 transition-colors duration-200 hover:border-white/20 shadow-md ${className}`}
       {...props}
     >
       {/* Mouse Spotlight Layer */}
       <div
-        className="pointer-events-none absolute -inset-px transition-opacity duration-300 z-10"
+        className="pointer-events-none absolute -inset-px transition-opacity duration-200 z-10"
         style={{
           opacity,
-          background: `radial-gradient(500px circle at ${position.x}px ${position.y}px, ${spotlightColor}, transparent 60%)`,
+          background: `radial-gradient(400px circle at ${position.x}px ${position.y}px, ${spotlightColor}, transparent 60%)`,
         }}
       />
       <div className="relative z-20 h-full flex flex-col">{children}</div>

@@ -19,6 +19,17 @@ html.lenis, html.lenis body {
   pointer-events: none;
 }
 
+/* ============ GPU & CORE WEB VITALS OPTIMIZATIONS ============ */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 500px;
+}
+
+.gpu-accelerated {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
 
 /* ============ DARK THEME (default) ============ */

@@ -9,20 +9,24 @@ interface BaseProps {
   duration?: number;
 }
 
+const FAST_EASE = [0.16, 1, 0.3, 1]; // Ultra-responsive cubic bezier
+const GPU_STYLE = { willChange: "transform, opacity", transform: "translateZ(0)" };
+
 /**
- * 1. Smooth Fade In + Slide Up
+ * 1. Snappy GPU Fade In + Slide Up
  */
-export function FadeIn({ children, className = "", delay = 0, duration = 0.6 }: BaseProps) {
+export function FadeIn({ children, className = "", delay = 0, duration = 0.35 }: BaseProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40 }}
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-100px" }}
+      viewport={{ once: true, margin: "-50px" }}
       transition={{
         duration,
         delay,
-        ease: [0.215, 0.61, 0.355, 1],
+        ease: FAST_EASE,
       }}
+      style={GPU_STYLE}
       className={className}
     >
       {children}
@@ -31,7 +35,7 @@ export function FadeIn({ children, className = "", delay = 0, duration = 0.6 }: 
 }
 
 /**
- * 2. Directional Slide In (Left, Right, Up, Down)
+ * 2. Snappy Directional Slide In
  */
 interface SlideInProps extends BaseProps {
   direction?: "left" | "right" | "up" | "down";
@@ -42,9 +46,9 @@ export function SlideIn({
   children,
   className = "",
   direction = "left",
-  distance = 60,
+  distance = 24,
   delay = 0,
-  duration = 0.7,
+  duration = 0.38,
 }: SlideInProps) {
   const getInitial = () => {
     switch (direction) {
@@ -63,12 +67,13 @@ export function SlideIn({
     <motion.div
       initial={getInitial()}
       whileInView={{ opacity: 1, x: 0, y: 0 }}
-      viewport={{ once: true, margin: "-100px" }}
+      viewport={{ once: true, margin: "-50px" }}
       transition={{
         duration,
         delay,
-        ease: [0.215, 0.61, 0.355, 1],
+        ease: FAST_EASE,
       }}
+      style={GPU_STYLE}
       className={className}
     >
       {children}
@@ -77,7 +82,7 @@ export function SlideIn({
 }
 
 /**
- * 3. Stagger Container for Grids and Lists
+ * 3. Fast Stagger Container for Grids
  */
 interface StaggerContainerProps extends BaseProps {
   staggerDelay?: number;
@@ -86,14 +91,14 @@ interface StaggerContainerProps extends BaseProps {
 export function StaggerContainer({
   children,
   className = "",
-  staggerDelay = 0.15,
+  staggerDelay = 0.08,
   delay = 0,
 }: StaggerContainerProps) {
   return (
     <motion.div
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, margin: "-100px" }}
+      viewport={{ once: true, margin: "-50px" }}
       variants={{
         hidden: {},
         show: {
@@ -103,6 +108,7 @@ export function StaggerContainer({
           },
         },
       }}
+      style={GPU_STYLE}
       className={className}
     >
       {children}
@@ -111,7 +117,7 @@ export function StaggerContainer({
 }
 
 /**
- * 4. Stagger Item for Grid Cards / List Items
+ * 4. Fast Stagger Item for Grid Cards
  */
 interface StaggerItemProps extends BaseProps {
   direction?: "up" | "left" | "right";
@@ -122,8 +128,8 @@ export function StaggerItem({
   children,
   className = "",
   direction = "up",
-  distance = 35,
-  duration = 0.6,
+  distance = 18,
+  duration = 0.35,
 }: StaggerItemProps) {
   const getHidden = () => {
     switch (direction) {
@@ -147,10 +153,11 @@ export function StaggerItem({
           y: 0,
           transition: {
             duration,
-            ease: [0.215, 0.61, 0.355, 1],
+            ease: FAST_EASE,
           },
         },
       }}
+      style={GPU_STYLE}
       className={className}
     >
       {children}
@@ -159,19 +166,20 @@ export function StaggerItem({
 }
 
 /**
- * 5. Scale & Fade In for Badges / Widgets
+ * 5. Fast Scale & Fade In
  */
-export function ScaleIn({ children, className = "", delay = 0, duration = 0.6 }: BaseProps) {
+export function ScaleIn({ children, className = "", delay = 0, duration = 0.35 }: BaseProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.92 }}
+      initial={{ opacity: 0, scale: 0.96 }}
       whileInView={{ opacity: 1, scale: 1 }}
-      viewport={{ once: true, margin: "-100px" }}
+      viewport={{ once: true, margin: "-50px" }}
       transition={{
         duration,
         delay,
-        ease: [0.215, 0.61, 0.355, 1],
+        ease: FAST_EASE,
       }}
+      style={GPU_STYLE}
       className={className}
     >
       {children}

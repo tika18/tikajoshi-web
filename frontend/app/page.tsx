@@ -278,7 +278,7 @@ export default async function Home() {
       </section>
 
       {/* ── CORE HUBS GRID ── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 pt-16">
+      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 pt-16 cv-auto">
         <FadeIn>
           <div className="text-center mb-10">
             <h2 className="text-2xl font-black uppercase tracking-wider text-slate-400 flex items-center justify-center gap-2">
@@ -312,7 +312,7 @@ export default async function Home() {
       </section>
 
       {/* ── FEATURED BLOGS & NEWS ── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 py-20">
+      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 py-20 cv-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <SlideIn direction="left">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs font-bold text-violet-300 uppercase tracking-widest mb-4">
@@ -380,7 +380,7 @@ export default async function Home() {
 
       {/* ── FEATURED VEHICLES ── */}
       {vehicles.length > 0 && (
-        <section className="relative z-10 border-t border-white/6 bg-white/[0.015] py-24">
+        <section className="relative z-10 border-t border-white/6 bg-white/[0.015] py-24 cv-auto">
           <div className="max-w-6xl mx-auto px-4 md:px-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
               <SlideIn direction="left">
@@ -450,7 +450,7 @@ export default async function Home() {
       )}
 
       {/* ── STUDY + RESULTS ── */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 py-24 border-t border-white/6">
+      <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 py-24 border-t border-white/6 cv-auto">
         <FadeIn>
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-300 uppercase tracking-widest mb-6">
