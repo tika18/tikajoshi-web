@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface TickerIndex {
   value: string;
@@ -66,7 +67,12 @@ export default function NepseTicker() {
   const { nepse, turnover, gainers } = data;
 
   return (
-    <div className="bg-slate-950/90 border-b border-white/5 py-2.5 overflow-hidden relative z-20 select-none">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: [0.215, 0.61, 0.355, 1] }}
+      className="bg-slate-950/90 border-b border-white/5 py-2.5 overflow-hidden relative z-20 select-none"
+    >
       <div className="max-w-7xl mx-auto px-4 flex items-center gap-6">
         {/* Label */}
         <div className="shrink-0 flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black text-emerald-400 uppercase tracking-wider">
@@ -111,6 +117,6 @@ export default function NepseTicker() {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

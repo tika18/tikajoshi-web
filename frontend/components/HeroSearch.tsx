@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   Search, ArrowRight, TrendingUp, Sparkles,
   Clock, ChevronRight, ChevronLeft, X,
@@ -256,7 +257,12 @@ export default function HeroSearch() {
       <div className="relative z-10 w-full max-w-[1380px] mx-auto px-5 sm:px-8 md:px-12 grid grid-cols-1 lg:grid-cols-12 gap-y-14 gap-x-10 items-center">
 
         {/* ══════════ LEFT ══════════ */}
-        <div className="lg:col-span-7 flex flex-col justify-center">
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, ease: [0.215, 0.61, 0.355, 1] }}
+          className="lg:col-span-7 flex flex-col justify-center"
+        >
 
           {/* Live pill */}
           <div className="mb-6 sm:mb-8">
@@ -406,10 +412,15 @@ export default function HeroSearch() {
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* ══════════ RIGHT: BLOG SLIDER ══════════ */}
-        <div className="lg:col-span-5 w-full">
+        <motion.div
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, delay: 0.15, ease: [0.215, 0.61, 0.355, 1] }}
+          className="lg:col-span-5 w-full"
+        >
           <div className="relative w-full">
             <div className="absolute -inset-6 bg-gradient-to-tr from-violet-600/15 via-transparent to-emerald-600/12 blur-[70px] rounded-[3rem] pointer-events-none" />
 
@@ -523,7 +534,7 @@ export default function HeroSearch() {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
       </div>
     </section>
