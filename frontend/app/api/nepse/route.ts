@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { parse } from "node-html-parser";
 import { adminDb } from "@/lib/firebase-admin";
 import { ServerValue } from "firebase-admin/database";
+import { readHistoryDB, writeHistoryDB, appendDailyOHLC } from "@/lib/nepse-history";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -114,9 +115,13 @@ async function scrapeStocks() {
       const symLink = tds[1]?.querySelector("a");
       const sym = symLink ? symLink.text.trim() : tds[1]?.text?.trim() || "";
 
-      const ltp       = parseNumber(tds[7]?.text);
-      const close     = parseNumber(tds[6]?.text);
-      const vol       = tds[11]?.text?.trim() || "0";
+      const open     = parseNumber(tds[3]?.text);
+      const high     = parseNumber(tds[4]?.text);
+      const low      = parseNumber(tds[5]?.text);
+      const ltp      = parseNumber(tds[7]?.text);
+      const close    = parseNumber(tds[6]?.text);
+      const vwap     = parseNumber(tds[10]?.text);
+      const vol      = tds[11]?.text?.trim() || "0";
       const prevClose = parseNumber(tds[12]?.text);
       const turnover  = tds[13]?.text?.trim() || "0";
       const diff      = parseNumber(tds[15]?.text);
@@ -141,6 +146,11 @@ async function scrapeStocks() {
         vol,
         turnover,
         prevClose: effectivePrevClose,
+        open: open || effectiveLtp,
+        high: high || effectiveLtp,
+        low: low || effectiveLtp,
+        vwap: vwap || effectiveLtp,
+        sector: SECTOR_MAP[sym] || "Others",
       });
     }
 
@@ -455,6 +465,27 @@ export async function GET() {
 
     cachedData = data;
     lastFetchTime = Date.now();
+
+    // Record live OHLC entries into local nepse-history DB
+    try {
+      const todayStr = stockResult.sourceDate || new Date().toISOString().split("T")[0];
+      const db = readHistoryDB();
+      for (const s of allStocks) {
+        const volNum = parseFloat(s.vol?.replace(/,/g, "") || "0") || 0;
+        appendDailyOHLC(db, s.sym, {
+          date: todayStr,
+          open: s.open,
+          high: s.high,
+          low: s.low,
+          close: s.ltp,
+          volume: volNum,
+          vwap: s.vwap,
+        });
+      }
+      writeHistoryDB(db);
+    } catch (histErr) {
+      console.error("Failed to record daily OHLC history:", histErr);
+    }
 
     // Write to Firebase RTDB as a persistent cache layer
     if (adminDb) {

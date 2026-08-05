@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "NEPSE Live Chart Today, Market Depth & Share Market Nepal | Tika Joshi",
+  title: "NEPSE Live | Nepal Market Depth & Live Share Market Today | Tika Joshi",
   description:
-    "Get real-time NEPSE live trading charts, live market depth, floor-sheets, and instant IPO update alerts. Analyze Nepal stock market today for free.",
+    "Track NEPSE live, Nepal market depth, and live share market updates today. Check Mero Share live, today market price, and Nepal Stock Exchange live data free.",
   keywords: [
     "NEPSE live today",
     "nepal share market today",

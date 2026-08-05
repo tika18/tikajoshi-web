@@ -348,6 +348,7 @@ function StockTable({ stocks, loading, onStockClick }: { stocks: StockRow[]; loa
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           </div>
         </div>
+        <p className="text-[11px] text-slate-500 mt-1">Live share market prices and today market price for all NEPSE-listed companies.</p>
         
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
           {/* Search Bar */}
@@ -472,10 +473,11 @@ function SectorChart({ sectors, loading }: { sectors: SectorRow[]; loading: bool
 
   return (
     <div className="bg-[#0d1520] border border-slate-700/50 rounded-2xl p-5 sm:p-6">
-      <div className="flex items-center gap-2 mb-5">
+      <div className="flex items-center gap-2 mb-2">
         <Zap size={18} className="text-amber-400" />
         <h3 className="font-black text-white text-base sm:text-lg">Sector Performance</h3>
       </div>
+      <p className="text-[11px] text-slate-500 mb-4">Live market depth by sector — see which sectors are moving today.</p>
       <div className="space-y-3">
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => (
@@ -677,7 +679,7 @@ export default function MarketPage() {
 
                       <div className="flex items-center justify-between flex-wrap gap-3 max-w-2xl">
                         <p className="text-slate-400 text-base sm:text-lg leading-relaxed">
-                          Nepal Stock Exchange live index, top stocks, forex rates, EMI calculator — सबै एकै ठाउँमा। Free, real-time, no login required.
+                          Nepal Stock Exchange live index, live share market data, and Nepal market depth — All in same place । Free, real-time, no login required
                         </p>
 
                         <div className="flex items-center gap-3 mt-2 sm:mt-0">
@@ -763,7 +765,10 @@ export default function MarketPage() {
                         <div className="mb-8 rounded-2xl border border-slate-800/85 bg-[#0a0f1d] p-4 sm:p-5 shadow-sm">
                           <div className="flex items-center gap-2 mb-3">
                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                            <h3 className="text-xs font-bold tracking-wider uppercase text-slate-300">Live Market Tape</h3>
+                            <div>
+                              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Live Share — Today&apos;s Movers</p>
+                              <h3 className="text-xs font-bold tracking-wider uppercase text-slate-300">Live Market Tape</h3>
+                            </div>
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {data.topGainers.slice(0, 6).map((s) => (
@@ -869,7 +874,7 @@ export default function MarketPage() {
                           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 mb-5">
                             <div>
                               <h2 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2">
-                                <TrendingUp className="text-emerald-500" size={26} /> {chartSymbol === "NEPSE" ? "NEPSE Live" : `${chartSymbol} `} Chart
+                                <TrendingUp className="text-emerald-500" size={26} /> {chartSymbol === "NEPSE" ? "NEPSE Live Chart — Nepal Market Depth & Price Trends" : `${chartSymbol} Chart`}
                               </h2>
                               <p className="text-slate-400 text-sm mt-1">Real-time candlestick chart — nepsealpha.com powered</p>
                             </div>
@@ -931,7 +936,7 @@ export default function MarketPage() {
                         ZONE 3 — AI PREDICTOR
                     ══════════════════════════════════════════ */}
                     <section className="mb-12">
-                      <StockPredictor stocks={data?.stocks || []} />
+                      <StockPredictor stocks={data?.allStocks || data?.stocks || []} sectors={data?.sectors || []} />
                     </section>
 
                     {/* ══════════════════════════════════════════
@@ -944,7 +949,8 @@ export default function MarketPage() {
                             <Star fill="white" size={20} className="text-white" />
                           </div>
                           <div>
-                            <h2 className="text-base sm:text-lg font-bold text-white">IPO / Mero Share</h2>
+                            <h2 className="text-base sm:text-lg font-bold text-white">IPO / Mero Share Live</h2>
+                            <p className="text-slate-300 text-xs mt-0.5">Apply for IPO, check Mero Share live results and today&apos;s bazar updates.</p>
                             <p className="text-emerald-300/80 text-xs sm:text-sm mt-0.5">Apply for IPO र result check गर्नुस् — directly CDSC bata।</p>
                           </div>
                         </div>
@@ -1120,6 +1126,9 @@ export default function MarketPage() {
                           </p>
                         </div>
                       </div>
+                      <p className="text-sm text-slate-300 leading-relaxed mt-6 pt-4 border-t border-slate-800/60">
+                        Track live share market movement, Nepal market depth, and market depth live updates throughout the trading session. Whether you&apos;re checking mero share live holdings or comparing today market price across sectors, this page gives you complete Nepal Stock Exchange live visibility — no login needed.
+                      </p>
                     </section>
                   </>
                 ) : (
