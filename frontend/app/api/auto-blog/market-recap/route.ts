@@ -137,6 +137,35 @@ async function fetchLiveMarketData() {
   }
 }
 
+function getNextNepseTradingDay(currentDate: Date): { formattedDate: string; dayName: string } {
+  const next = new Date(currentDate);
+  const dayOfWeek = next.getDay(); // 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri, 6 = Sat
+
+  if (dayOfWeek === 4) {
+    // Thursday -> Next trading day is Sunday (+3 days)
+    next.setDate(next.getDate() + 3);
+  } else if (dayOfWeek === 5) {
+    // Friday -> Next trading day is Sunday (+2 days)
+    next.setDate(next.getDate() + 2);
+  } else if (dayOfWeek === 6) {
+    // Saturday -> Next trading day is Sunday (+1 day)
+    next.setDate(next.getDate() + 1);
+  } else {
+    // Sun, Mon, Tue, Wed -> Next calendar day (+1 day)
+    next.setDate(next.getDate() + 1);
+  }
+
+  const dayName = next.toLocaleDateString("en-US", { weekday: "long" });
+  const formattedDate = next.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  return { formattedDate, dayName };
+}
+
 async function handleMarketRecapGeneration(req: Request) {
   let currentStep = "1. Authorizing Request";
   try {
@@ -159,16 +188,24 @@ async function handleMarketRecapGeneration(req: Request) {
     }
 
     const apiKey = process.env.GEMINI_API_KEY.trim();
-    const currentDateStr = new Date().toLocaleDateString("en-US", {
+    const now = new Date();
+    const currentDateStr = now.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
     });
+    const nextTradingDayInfo = getNextNepseTradingDay(now);
 
     // 1. Gather Factual Market & Technical Data
     currentStep = "2. Gathering Factual Market Data";
-    const marketFacts = await fetchLiveMarketData();
+    const rawMarketFacts = await fetchLiveMarketData();
+    const marketFacts = {
+      currentSessionDate: currentDateStr,
+      nextTradingDay: nextTradingDayInfo.formattedDate,
+      nextTradingDayName: nextTradingDayInfo.dayName,
+      ...(rawMarketFacts || {}),
+    };
 
     // 2. Discover Gemini model
     currentStep = "3. Discovering Gemini AI Model";
@@ -204,16 +241,17 @@ ${JSON.stringify(marketFacts, null, 2)}
 Instructions & Guidelines:
 1. Tone: Authoritative, engaging financial journalism (like Sharesansar / Merolagani daily wraps).
 2. Factual Accuracy: All numbers, percentage gains, index points, turnover, and technical signals MUST be strictly sourced from FACTUAL_MARKET_DATA. Do NOT invent prices or fake statistics.
-3. Negative Constraint: Do NOT use generic AI buzzwords or clichés like:
+3. NEPSE Trading Calendar Rule: Nepal's trading days run Sunday through Thursday (Friday and Saturday are weekend market holidays). In Section 4 ("What to Watch Tomorrow"), you MUST explicitly state that the next trading session is on ${nextTradingDayInfo.formattedDate} (${nextTradingDayInfo.dayName}). Use the exact next trading date provided in FACTUAL_MARKET_DATA ("nextTradingDay": "${nextTradingDayInfo.formattedDate}"). Do NOT calculate or guess a different date.
+4. Negative Constraint: Do NOT use generic AI buzzwords or clichés like:
    - "in today's fast-paced world"
    - "it's important to note"
    - "in conclusion"
    - "delve into" / "unlock" / "game-changer" / "testament to"
-4. Structure & Content:
+5. Structure & Content:
    - Section 1: Session Overview (NEPSE Index performance, turnover, market breadth)
    - Section 2: Sectoral & Stock Dynamics (Top gainers, losers, sectoral trends)
    - Section 3: Technical Analysis & Key Indicators (RSI, MACD, EMA trends for major stocks)
-   - Section 4: What to Watch Tomorrow (Key resistance/support levels and indicators to watch in next session)
+   - Section 4: What to Watch Tomorrow (Forward-looking technical outlook and key levels for the next trading session on ${nextTradingDayInfo.formattedDate})
    - Section 5: Mandatory Disclaimer (Bold disclaimer stating commentary is for educational purposes only and not financial advice).
 
 Return ONLY valid JSON (no markdown code blocks):
@@ -230,7 +268,7 @@ Return ONLY valid JSON (no markdown code blocks):
     {"style": "h2", "text": "Technical Analysis & Signal Breakdown"},
     {"style": "normal", "text": "Detailed commentary on RSI, MACD, and Golden/Death cross signals..."},
     {"style": "h2", "text": "What to Watch Tomorrow"},
-    {"style": "normal", "text": "Forward looking technical outlook and key levels..."},
+    {"style": "normal", "text": "Forward looking technical outlook for the next session on ${nextTradingDayInfo.formattedDate}..."},
     {"style": "h2", "text": "Important Disclaimer"},
     {"style": "normal", "text": "Disclaimer: This daily market recap and technical analysis commentary is provided for educational and informational purposes only. It does not constitute financial, investment, or trading advice."}
   ]
