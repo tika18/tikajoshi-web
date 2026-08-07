@@ -9,17 +9,19 @@ import SipCalculatorOriginal from "@/components/SipCalculator";
 import ShareAdjustmentCalculatorOriginal from "@/components/ShareAdjustmentCalculator";
 import WaccCalculatorOriginal from "@/components/WaccCalculator";
 import PivotCalculatorOriginal from "@/components/PivotCalculator";
+import MarketPortfolioOriginal from "@/components/MarketPortfolio";
 
 const StockPredictor = memo(StockPredictorOriginal);
 const SipCalculator = memo(SipCalculatorOriginal);
 const ShareAdjustmentCalculator = memo(ShareAdjustmentCalculatorOriginal);
 const WaccCalculator = memo(WaccCalculatorOriginal);
 const PivotCalculator = memo(PivotCalculatorOriginal);
+const MarketPortfolio = memo(MarketPortfolioOriginal);
 import {
   TrendingUp, TrendingDown, ExternalLink, Maximize2, X,
   Star, RefreshCw, Calculator, DollarSign, BarChart2,
   ArrowUpRight, ArrowDownRight, Info, Zap, Globe,
-  Loader2, WifiOff, Clock, Calendar, FileText as BlogIcon, Tag
+  Loader2, WifiOff, Clock, Calendar, FileText as BlogIcon, Tag, Briefcase
 } from "lucide-react";
 import NepaliDate from "nepali-date-converter";
 
@@ -537,7 +539,7 @@ function getCategoryBadgeClass(category: string): string {
 ═══════════════════════════════════════════════════ */
 export default function MarketPage() {
   const [fullScreen, setFullScreen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"market" | "news">("market");
+  const [activeTab, setActiveTab] = useState<"market" | "portfolio" | "news">("market");
   const [chartSymbol, setChartSymbol] = useState("NEPSE");
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<NepseData | null>(null);
@@ -748,24 +750,38 @@ export default function MarketPage() {
                   </div>
 
                   {/* ── TAB SELECTOR ── */}
-                  <div className="flex gap-2 bg-white/[0.03] border border-white/10 p-1 rounded-xl mb-8 max-w-sm">
+                  <div className="flex gap-2 bg-white/[0.03] border border-white/10 p-1.5 rounded-xl mb-8 max-w-md">
                     <button
                       onClick={() => setActiveTab("market")}
                       className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition ${
-                        activeTab === "market" ? "bg-emerald-600 text-white" : "text-slate-400 hover:text-white"
+                        activeTab === "market" ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20" : "text-slate-400 hover:text-white"
                       }`}
                     >
                       <BarChart2 size={14} /> Live Dashboard
                     </button>
                     <button
+                      onClick={() => setActiveTab("portfolio")}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition ${
+                        activeTab === "portfolio" ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20" : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      <Briefcase size={14} /> My Portfolio
+                    </button>
+                    <button
                       onClick={() => setActiveTab("news")}
                       className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition ${
-                        activeTab === "news" ? "bg-emerald-600 text-white" : "text-slate-400 hover:text-white"
+                        activeTab === "news" ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20" : "text-slate-400 hover:text-white"
                       }`}
                     >
                       <BlogIcon size={14} /> News & Blogs
                     </button>
                   </div>
+
+                  {activeTab === "portfolio" && (
+                    <div className="mb-12">
+                      <MarketPortfolio liveStocks={data?.stocks || []} />
+                    </div>
+                  )}
 
                   {activeTab === "market" && (
                     <>
