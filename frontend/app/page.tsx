@@ -2,6 +2,7 @@ import { client } from "@/sanity/client";
 import Navbar from "@/components/Navbar";
 import HeroSearch from "@/components/HeroSearch";
 import NepseTicker from "@/components/NepseTicker";
+import IPOCalendar from "@/components/IPOCalendar";
 import { FadeIn, SlideIn, StaggerContainer, StaggerItem } from "@/components/ScrollReveal";
 import SpotlightCard from "@/components/SpotlightCard";
 import Link from "next/link";
@@ -225,55 +226,7 @@ export default async function Home() {
       {/* ── UPCOMING IPOS WIDGET (AT TOP OF BODY) ── */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 pt-10">
         <FadeIn delay={0.1}>
-          <div className="border border-white/[0.08] bg-gradient-to-br from-white/[0.02] to-white/[0.005] rounded-3xl p-6 sm:p-8 backdrop-blur-md shadow-[0_24px_50px_-12px_rgba(0,0,0,0.7)] hover:border-emerald-500/20 transition-all duration-500">
-            <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-              <div className="flex items-center gap-2">
-                <Calendar className="text-emerald-400" size={20} />
-                <h3 className="text-xl sm:text-2xl font-black text-white">Upcoming & Active IPO Tracker</h3>
-              </div>
-              <span className="text-[10px] font-black tracking-widest text-emerald-400 uppercase bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-                Live Updates
-              </span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm border-collapse">
-                <thead>
-                  <tr className="border-b border-white/10 text-slate-400 text-xs font-bold uppercase tracking-wider">
-                    <th className="py-3 px-4">Company</th>
-                    <th className="py-3 px-4">Sector</th>
-                    <th className="py-3 px-4">Total Units</th>
-                    <th className="py-3 px-4">Issue Price</th>
-                    <th className="py-3 px-4">Dates</th>
-                    <th className="py-3 px-4 text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {UPCOMING_IPOS.map((ipo, idx) => (
-                    <tr key={idx} className="hover:bg-white/[0.01] transition-colors">
-                      <td className="py-4 px-4 font-bold text-white text-xs sm:text-sm">{ipo.company}</td>
-                      <td className="py-4 px-4 text-slate-400 text-xs">{ipo.sector}</td>
-                      <td className="py-4 px-4 text-slate-300 text-xs">{ipo.units}</td>
-                      <td className="py-4 px-4 font-mono text-emerald-400 text-xs">{ipo.price}</td>
-                      <td className="py-4 px-4 text-xs text-slate-400 leading-tight">
-                        <div>Open: {ipo.openDate}</div>
-                        <div>Close: {ipo.closeDate}</div>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                          ipo.status === "Open" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-                          ipo.status === "Upcoming" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
-                          "bg-red-500/10 text-red-400 border border-red-500/20"
-                        }`}>
-                          {ipo.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <IPOCalendar />
         </FadeIn>
       </section>
 

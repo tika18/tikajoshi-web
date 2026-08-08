@@ -32,15 +32,6 @@ const navLinks = [
       { name: "PDF Converter", href: "/tools/img-to-pdf", icon: "🔄" },
     ],
   },
-  {
-    name: "Market", href: "/market", color: "text-cyan-400",
-    glow: "group-hover:shadow-cyan-500/20",
-    items: [
-      { name: "NEPSE Live", href: "/market", icon: "📈" },
-      { name: "Forex Rates", href: "/market/forex", icon: "💱" },
-      { name: "EMI Calculator", href: "/tools/emi-calculator", icon: "🧮" },
-    ],
-  },
 ];
 
 export default function Navbar() {
@@ -138,7 +129,10 @@ const initial = user?.displayName ? String(user.displayName)[0].toUpperCase() : 
                 </AnimatePresence>
               </div>
             ))}
-            <Link href="/news" className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.1em] text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 rounded-lg hover:bg-cyan-500/10 transition">
+            <Link href="/market" className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.1em] text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 rounded-lg hover:bg-cyan-500/10 transition">
+              NEPSE Live
+            </Link>
+            <Link href="/news" className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.1em] text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 rounded-lg hover:bg-emerald-500/10 transition">
               News
             </Link>
             <Link href="/blog" className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.1em] text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 rounded-lg hover:bg-violet-500/10 transition">
@@ -314,6 +308,7 @@ const initial = user?.displayName ? String(user.displayName)[0].toUpperCase() : 
               <div className="space-y-1">
                 {[
                   { href: "/", label: "Home", icon: "🏠" },
+                  { href: "/market", label: "NEPSE Live", icon: "📈" },
                   { href: "/news", label: "News", icon: "📰" },
                   { href: "/blog", label: "Blogs", icon: "✍️" },
                   { href: "/chill-zone", label: "Live Sports", icon: "📺" },
